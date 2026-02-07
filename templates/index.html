@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lyrics Generator</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #0d0d0d;
+      color: white;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      margin: 0;
+    }
+
+    .container {
+      width: 90%;
+      max-width: 500px;
+      background: #1a1a1a;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0px 0px 20px rgba(0, 255, 255, 0.2);
+      text-align: center;
+    }
+
+    h1 {
+      color: cyan;
+      margin-bottom: 20px;
+    }
+
+    input {
+      width: 90%;
+      padding: 12px;
+      margin: 10px 0;
+      border: none;
+      border-radius: 8px;
+      outline: none;
+      font-size: 16px;
+    }
+
+    button {
+      background: cyan;
+      border: none;
+      padding: 12px 20px;
+      margin-top: 10px;
+      border-radius: 8px;
+      font-size: 16px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    button:hover {
+      background: #00b3b3;
+    }
+
+    pre {
+      text-align: left;
+      white-space: pre-wrap;
+      background: #111;
+      padding: 15px;
+      border-radius: 8px;
+      margin-top: 20px;
+      min-height: 80px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🎶 Lyrics Generator</h1>
+
+    <input type="text" id="topic" placeholder="Enter song topic (e.g love, hustle)" />
+    <input type="text" id="style" placeholder="Enter style (e.g Afrobeat, Rap, Drill)" />
+
+    <button onclick="generateLyrics()">Generate Lyrics</button>
+
+    <pre id="output">Your lyrics will appear here...</pre>
+  </div>
+
+  <script>
+    async function generateLyrics() {
+      const topic = document.getElementById("topic").value;
+      const style = document.getElementById("style").value;
+      const output = document.getElementById("output");
+
+      output.textContent = "Generating lyrics... ⏳";
+
+      try {
+        const response = await fetch("/generate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ topic: topic, style: style })
+        });
+
+        const data = await response.json();
+        output.textContent = data.lyrics;
+      } catch (error) {
+        output.textContent = "Error generating lyrics ❌";
+      }
+    }
+  </script>
+</body>
+  </html>
