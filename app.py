@@ -3,7 +3,7 @@ from flask import Flask, render_template, request
 def home():
     return render_template("index.html")
 app = Flask(__name__)
-
+gunicorn app:app
 def generate_ai_lyrics(style, mood, artist):
     return f"""
 [INTRO]
