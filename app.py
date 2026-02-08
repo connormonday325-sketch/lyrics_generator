@@ -1,209 +1,197 @@
 from flask import Flask, render_template, request, jsonify
 import random
 import os
+from datetime import datetime
 
 app = Flask(__name__)
 
-# ==============================
-# FREE SMART LYRICS DATABASE
-# ==============================
+# ===============================
+# LYRICS DATABASE (SMART RANDOM)
+# ===============================
 
-openers = {
-    "Trap": [
-        "Yeah, uh, let's go",
-        "Ayy, straight from the trenches",
-        "Uh, money on my mind",
-        "They don't know the pain inside",
-        "Ayy, we came from nothing",
-        "Yeah yeah, gang",
-    ],
+OPENERS = {
     "Afrobeats": [
-        "Yeah yeah, ooh na na",
-        "Omo, listen to the vibe",
-        "Ahh, this one na for the street",
-        "Baby girl come closer",
-        "E choke, e sweet, e loud",
-        "Ayy, Lagos nights",
+        "Yeah yeah, omo this vibe too sweet",
+        "Omo, listen to the sound of the street",
+        "Ahh, Lagos nights dey call my name",
+        "Baby girl come closer make we dance",
+        "E choke, e loud, e sweet, no cap",
+        "Na your love dey scatter my brain",
     ],
-    "Hip Hop": [
-        "Listen up, let me talk my talk",
-        "I been grinding all my life",
-        "From the bottom, now we rising",
-        "I ain't here for the jokes",
-        "They doubted me, now they silent",
+    "Trap": [
+        "Yeah, I been grinding nonstop",
+        "Money on my mind, I can’t stop",
+        "Came from the bottom now I’m up",
+        "They don’t know the pain I felt",
+        "I’m chasing dreams, not sleep",
+    ],
+    "Drill": [
+        "Real life, no cap, no acting",
+        "Street talk, everybody watching",
+        "If I move wrong, dem go chat",
+        "Cold heart, but my spirit strong",
+    ],
+    "Gospel": [
+        "Lord I give You all the glory",
+        "Your grace has changed my story",
+        "Even in the storm I stand",
+        "Your mercy keeps holding me",
     ],
     "R&B": [
-        "Girl, you got me feeling something",
-        "Late night vibes in my mind",
-        "I don't wanna lose your love",
-        "Your body calling my name",
-        "I been thinking 'bout you lately",
+        "Girl you got me feeling some type way",
+        "Late night calls, you on my mind",
+        "Your love is sweeter than wine",
+        "Hold me close, don’t let go",
     ],
+    "Love Song": [
+        "Baby I no fit lie, na you I want",
+        "Your smile dey make my heart calm",
+        "Forever with you, that’s the plan",
+        "You be my peace, you be my home",
+    ]
 }
 
-hooks = {
-    "Trap": [
-        "I hustle everyday, no sleep for my eyes",
-        "They be hating but I still survive",
-        "Money coming fast, I’m feeling alive",
-        "I’m chasing the bag, no time for lies",
-    ],
+HOOKS = {
     "Afrobeats": [
-        "Baby girl, make you whine for me",
-        "Tonight we go dance till morning",
-        "Your love dey sweet like honey",
-        "Omo, this vibe dey make me happy",
+        "Na you be my vibe, na you be my vibe",
+        "We go dance all night till the morning light",
+        "Your love dey make me high, dey make me high",
     ],
-    "Hip Hop": [
-        "I came too far, can't go back now",
-        "They never believed, look at me now",
-        "My dreams big, I won't back down",
-        "I write my story, I wear the crown",
+    "Trap": [
+        "I’m on the road to the top, can’t stop",
+        "Money coming fast, yeah I want more",
+        "I can’t fold, I can’t break",
+    ],
+    "Drill": [
+        "No love for the fake, no love for the lies",
+        "We move silent but we deadly",
+        "Street life tough but we ready",
+    ],
+    "Gospel": [
+        "I will praise You every day",
+        "Your love never fails me",
+        "Jesus You are my strength",
     ],
     "R&B": [
-        "Girl, your love is all I need",
-        "Hold me close and never leave",
-        "You got my heart on a string",
-        "I’m addicted to the way you breathe",
+        "Girl I want you close tonight",
+        "You and me, no stress, just vibes",
+        "Your love is all I need",
     ],
+    "Love Song": [
+        "You be my one and only",
+        "I’ll love you till forever",
+        "Your love is my medicine",
+    ]
 }
 
-verses = {
-    "Motivational": [
-        "Pain in my chest but I smile instead",
-        "Too much pressure but I'm still steady",
-        "I can't stop till I'm legendary",
-        "Every setback made me stronger already",
-        "Nobody helped me, I built myself",
+BRIDGES = {
+    "Afrobeats": [
+        "If I fall today, tomorrow I’m better",
+        "No more pain, only vibes forever",
+        "We go dey alright, no matter the weather",
     ],
-    "Love": [
-        "Your body got me losing control",
-        "Every time you smile, you heal my soul",
-        "I want you close, don’t let me go",
-        "Your love is fire, burning slow",
+    "Trap": [
+        "I lost friends but I gained focus",
+        "I been through hell, still I’m standing",
+        "Hard times made me stronger",
     ],
-    "Sad": [
-        "I’ve been lonely in a crowded room",
-        "Tears fall quietly like rain in June",
-        "My heart broke, but I still pretend",
-        "I lost myself trying to be your friend",
+    "Drill": [
+        "Dem wan test me, but I no dey fear",
+        "I stay alert, I stay prepared",
+        "I no fit lose guard, not here",
     ],
-    "Party": [
-        "Tonight we turn up, no stress allowed",
-        "Champagne popping, music loud",
-        "Dancing like we don’t care now",
-        "All my guys in the club right now",
+    "Gospel": [
+        "Even when I cry, You still hear me",
+        "You never leave me alone",
+        "Your light is guiding me home",
     ],
+    "R&B": [
+        "I don’t want nobody else",
+        "I just want your heart tonight",
+        "You’re the only one I feel",
+    ],
+    "Love Song": [
+        "I’ll fight for you any day",
+        "Even if the world turns cold",
+        "My love for you won’t fade",
+    ]
 }
 
-bridges = [
-    "If I fall today, tomorrow I'm better",
-    "No more pain, only vibes forever",
-    "I pray for blessings, not for pleasure",
-    "I came too far to lose my treasure",
-    "God dey guide me through the weather",
-]
+OUTROS = {
+    "Afrobeats": [
+        "Na grace, na hustle, na vibes",
+        "We go dey alright",
+        "This love no go end",
+    ],
+    "Trap": [
+        "Yeah, we made it",
+        "Still grinding, still winning",
+        "Legendary lifestyle",
+    ],
+    "Drill": [
+        "No fear, only action",
+        "We keep moving",
+        "Street made me",
+    ],
+    "Gospel": [
+        "All glory to God",
+        "Jesus is King",
+        "Forever I praise",
+    ],
+    "R&B": [
+        "Girl you’re my peace",
+        "I’m yours forever",
+        "Love don’t die",
+    ],
+    "Love Song": [
+        "Forever you and I",
+        "You be my destiny",
+        "My heart is yours",
+    ]
+}
 
-outros = [
-    "Na grace, na hustle, na vibes",
-    "We go make am, no lies",
-    "Forever we rise, we rise",
-    "This is my life, my life",
-    "Omo, we don win already",
-]
+MOODS = {
+    "Happy": ["smiling", "dancing", "vibing"],
+    "Sad": ["crying", "missing you", "broken inside"],
+    "Motivational": ["grinding", "focused", "never giving up"],
+    "Romantic": ["in love", "obsessed", "thinking of you"],
+    "Street": ["hustling", "surviving", "moving smart"],
+}
 
-# ==============================
-# AI MODE PLACEHOLDER (FUTURE)
-# ==============================
+# ===============================
+# PREMIUM CONTROL (LIMIT FREE)
+# ===============================
 
-def ai_generate_lyrics(topic, style, mood, artist):
-    # This is where you will later connect OpenAI API
-    # For now, we simulate "AI style" using smart randomness
-
-    opener = random.choice(openers.get(style, ["Yeah, let's go"]))
-    hook = random.choice(hooks.get(style, ["We keep going strong"]))
-    verse_line = random.choice(verses.get(mood, ["I keep pushing everyday"]))
-    bridge = random.choice(bridges)
-    outro = random.choice(outros)
-
-    lyrics = f"""
-🎶 Lyrics AI Generated 🎶
-
-Topic: {topic}
-Style: {style}
-Mood: {mood}
-Artist Inspiration: {artist}
-
-[INTRO]
-{opener}
-
-[VERSE 1]
-{verse_line}
-{random.choice(verses.get(mood, verses["Motivational"]))}
-{random.choice(verses.get(mood, verses["Motivational"]))}
-
-[CHORUS]
-{hook}
-{hook}
-
-[VERSE 2]
-{random.choice(verses.get(mood, verses["Motivational"]))}
-{random.choice(verses.get(mood, verses["Motivational"]))}
-Talking about {topic}, I never fold.
-
-[BRIDGE]
-{bridge}
-
-[FINAL CHORUS]
-{hook}
-{hook}
-
-[OUTRO]
-{outro}
-""".strip()
-
-    return lyrics
+FREE_LIMIT = 3  # free generations per day
 
 
-def random_generate_lyrics(topic, style, mood):
-    opener = random.choice(openers.get(style, ["Yeah, let's go"]))
-    hook = random.choice(hooks.get(style, ["We keep going strong"]))
-    verse_line = random.choice(verses.get(mood, ["I keep pushing everyday"]))
-    bridge = random.choice(bridges)
-    outro = random.choice(outros)
-
-    lyrics = f"""
-🎵 Random Lyrics Generated 🎵
-
-Topic: {topic}
-Style: {style}
-Mood: {mood}
-
-[INTRO]
-{opener}
-
-[VERSE]
-{verse_line}
-{random.choice(verses.get(mood, verses["Motivational"]))}
-{random.choice(verses.get(mood, verses["Motivational"]))}
-
-[CHORUS]
-{hook}
-{hook}
-
-[BRIDGE]
-{bridge}
-
-[OUTRO]
-{outro}
-""".strip()
-
-    return lyrics
+def get_today_key():
+    return datetime.now().strftime("%Y-%m-%d")
 
 
-# ==============================
+# store in memory (works on Render but resets sometimes)
+user_usage = {}
+
+
+def can_generate(ip):
+    today = get_today_key()
+    if ip not in user_usage:
+        user_usage[ip] = {}
+
+    if today not in user_usage[ip]:
+        user_usage[ip][today] = 0
+
+    return user_usage[ip][today] < FREE_LIMIT
+
+
+def increase_usage(ip):
+    today = get_today_key()
+    user_usage[ip][today] += 1
+
+
+# ===============================
 # ROUTES
-# ==============================
+# ===============================
 
 @app.route("/")
 def home():
@@ -214,19 +202,80 @@ def home():
 def generate():
     data = request.get_json()
 
-    topic = data.get("topic", "Love")
-    style = data.get("style", "Trap")
-    mood = data.get("mood", "Motivational")
-    artist = data.get("artist", "Wizkid")
-    mode = data.get("mode", "ai")  # ai or random
+    topic = data.get("topic", "").strip()
+    style = data.get("style", "Afrobeats")
+    mood = data.get("mood", "Happy")
+    artist = data.get("artist", "None")
+    mode = data.get("mode", "free")  # free or premium
 
-    if mode == "random":
-        lyrics = random_generate_lyrics(topic, style, mood)
-    else:
-        lyrics = ai_generate_lyrics(topic, style, mood, artist)
+    user_ip = request.remote_addr
 
-    return jsonify({"lyrics": lyrics})
+    # premium mode bypass limit
+    if mode == "free":
+        if not can_generate(user_ip):
+            return jsonify({
+                "error": True,
+                "message": "Free limit reached! Upgrade to Premium for unlimited lyrics."
+            })
+
+        increase_usage(user_ip)
+
+    if not topic:
+        topic = "love and hustle"
+
+    opener = random.choice(OPENERS.get(style, OPENERS["Afrobeats"]))
+    hook = random.choice(HOOKS.get(style, HOOKS["Afrobeats"]))
+    bridge = random.choice(BRIDGES.get(style, BRIDGES["Afrobeats"]))
+    outro = random.choice(OUTROS.get(style, OUTROS["Afrobeats"]))
+
+    mood_words = random.choice(MOODS.get(mood, MOODS["Happy"]))
+
+    lyrics = f"""
+🎵 {topic.upper()} ({style} / {mood})
+
+[INTRO]
+{opener}
+
+[VERSE 1]
+Talking about {topic}, I’m {mood_words}
+Life no easy but I still dey move
+Every day I pray make I improve
+No time for fake, only truth
+
+[CHORUS]
+{hook}
+{hook}
+
+[VERSE 2]
+Inspired by {artist}, I dey feel the vibe
+I no go stop till I touch the sky
+Pain in my chest but I smile instead
+Too much pressure but I’m still steady
+
+[BRIDGE]
+{bridge}
+{bridge}
+
+[FINAL CHORUS]
+{hook}
+{hook}
+
+[OUTRO]
+{outro}
+""".strip()
+
+    return jsonify({"error": False, "lyrics": lyrics})
+
+
+# ===============================
+# PAYSTACK PLACEHOLDER ROUTE
+# ===============================
+@app.route("/paystack-key")
+def paystack_key():
+    # Replace later with your real public key
+    return jsonify({"publicKey": "pk_test_xxxxxxxxxxxxxxxxxxxxx"})
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port)
