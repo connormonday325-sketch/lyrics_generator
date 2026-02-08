@@ -1,9 +1,11 @@
 from flask import Flask, render_template, request
+
+app = Flask(__name__)
+
 @app.route("/")
 def home():
     return render_template("index.html")
-app = Flask(__name__)
-gunicorn app:app
+
 def generate_ai_lyrics(style, mood, artist):
     return f"""
 [INTRO]
@@ -108,5 +110,16 @@ Yeah yeah...
 Feeling {mood}...
 We made it!
 """
+
+@app.route("/generate", methods=["POST"])
+def generate():
+    style = request.form.get("style")
+    mood = request.form.get("mood")
+    artist = request.form.get("artist")
+
+    lyrics = generate_ai_lyrics(style, mood, artist)
+
+    return render_template("index.html", lyrics=lyrics)
+
 if __name__ == "__main__":
-    app.run()
+    app.run(debug=True)
