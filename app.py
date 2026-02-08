@@ -1,6 +1,14 @@
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, jsonify, send_file
+import os
+import openai
+from fpdf import FPDF
+import uuid
 
 app = Flask(__name__)
+
+# OpenAI API Key from Render Environment Variables
+openai.api_key = os.getenv("OPENAI_API_KEY")
+
 
 @app.route("/")
 def home():
@@ -9,79 +17,74 @@ def home():
 
 @app.route("/generate", methods=["POST"])
 def generate():
-    mood = request.form.get("mood", "Happy")
-    artist = request.form.get("artist", "Wizkid")
-    topic = request.form.get("topic", "Love")
+    data = request.get_json()
 
-    lyrics = f"""
-[INTRO]
-Yeah yeah...
-This one na {mood} vibe...
-Inspired by {artist}...
-Eyy...
+    mood = data.get("mood", "Happy")
+    artist = data.get("artist", "Wizkid")
+    topic = data.get("topic", "Love")
 
-[VERSE 1]
-I dey think about {topic} for my mind all day
-Every little moment, e dey make me wan pray
-Life no easy but I still dey maintain
-Steady on my grind, no be story I dey claim
+    prompt = f"""
+Write a full Nigerian Afrobeats song lyrics.
+Mood: {mood}
+Artist inspiration: {artist}
+Topic: {topic}
 
-I remember those days when nobody believe
-Now I dey shine small, see the blessings we receive
-If na money, if na fame, if na peace we dey chase
-I go still carry {topic} for my heart and my space
+Make it very long with:
+- Intro
+- Verse 1
+- Chorus
+- Verse 2
+- Chorus
+- Bridge
+- Final Chorus
+- Outro
 
-[PRE-CHORUS]
-Oh my baby no go fear
-I go hold you close right here
-Even if the night cold pass
-We go still survive this year
-
-[CHORUS]
-Oh oh oh...
-{topic} don catch me for my soul
-Oh oh oh...
-Na you be the one I want
-Oh oh oh...
-No go leave me make I fall
-This {mood} feeling, e dey burst my heart
-
-[VERSE 2]
-Me I no fit lie, you dey give me ginger
-Anytime you smile, e dey make me stronger
-People talk plenty but I no dey hear
-As long as you dey here, everything clear
-
-I dey hustle everyday, no time to relax
-But your love na the peace wey I never lack
-If the world turn upside down, I go still stand
-Cause {topic} na the blessing wey I hold for my hand
-
-[BRIDGE]
-If the rain fall, I go cover you
-If the pain come, I go fight for you
-If dem say love hard, I go prove them wrong
-Cause your matter na my favorite song
-
-[FINAL CHORUS]
-Oh oh oh...
-{topic} don catch me for my soul
-Oh oh oh...
-Na you be the one I want
-Oh oh oh...
-No go leave me make I fall
-This {mood} feeling, e dey burst my heart
-
-[OUTRO]
-Yeah yeah...
-{artist} vibes...
-{mood} mood...
-Talking about {topic}...
-Eyy...
+Add some Pidgin English and catchy lines.
 """
 
-    return render_template("index.html", lyrics=lyrics)
+    try:
+        response = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo",
+            messages=[
+                {"role": "system", "content": "You are a professional songwriter."},
+                {"role": "user", "content": prompt}
+            ],
+            max_tokens=800,
+            temperature=0.9
+        )
+
+        lyrics = response["choices"][0]["message"]["content"]
+
+        return jsonify({"lyrics": lyrics})
+
+    except Exception as e:
+        return jsonify({"lyrics": f"Error generating lyrics: {str(e)}"})
+
+
+@app.route("/download_pdf", methods=["POST"])
+def download_pdf():
+    data = request.get_json()
+    lyrics = data.get("lyrics", "")
+
+    if lyrics.strip() == "":
+        return jsonify({"error": "No lyrics provided"}), 400
+
+    # Create PDF file
+    filename = f"lyrics_{uuid.uuid4().hex}.pdf"
+    filepath = os.path.join("/tmp", filename)
+
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_auto_page_break(auto=True, margin=15)
+    pdf.set_font("Arial", size=12)
+
+    for line in lyrics.split("\n"):
+        pdf.multi_cell(0, 8, line)
+
+    pdf.output(filepath)
+
+    return send_file(filepath, as_attachment=True, download_name="AI_Lyrics.pdf")
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(host="0.0.0.0", port=5000)
