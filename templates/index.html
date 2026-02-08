@@ -218,7 +218,7 @@
 
         if (data.lyrics) {
           generatedLyrics = data.lyrics;
-          output.innerText = data.lyrics;
+          typeLyrics(data.lyrics, output);
 
           // Enable buttons
           copyBtn.disabled = false;
@@ -250,6 +250,23 @@
       link.href = URL.createObjectURL(blob);
       link.download = "lyrics.txt";
       link.click();
+}
+
+function typeLyrics(text, element) {
+    
+  element.innerText = "";
+  let i = 0;
+
+  const interval = setInterval(() => {
+    element.innerText += text.charAt(i);
+    i++;
+
+    element.scrollTop = element.scrollHeight;
+
+    if (i >= text.length) {
+      clearInterval(interval);
+    }
+  }, 15);
     }
   </script>
 </body>
