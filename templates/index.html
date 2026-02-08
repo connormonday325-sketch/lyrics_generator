@@ -45,6 +45,7 @@
             font-size: 18px;
             cursor: pointer;
             font-weight: bold;
+            margin-top: 10px;
         }
 
         button:hover {
@@ -67,13 +68,28 @@
         .copy-btn {
             background: limegreen;
             color: white;
-            margin-top: 10px;
-            width: auto;
-            padding: 10px 20px;
+            width: 48%;
         }
 
         .copy-btn:hover {
             background: green;
+        }
+
+        .download-btn {
+            background: dodgerblue;
+            color: white;
+            width: 48%;
+        }
+
+        .download-btn:hover {
+            background: royalblue;
+        }
+
+        .btn-row {
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+            margin-top: 15px;
         }
     </style>
 </head>
@@ -96,7 +112,10 @@
         <h2>🎵 Generated Lyrics</h2>
         <pre id="lyricsText">{{ lyrics }}</pre>
 
-        <button class="copy-btn" onclick="copyLyrics()">📋 Copy Lyrics</button>
+        <div class="btn-row">
+            <button class="copy-btn" onclick="copyLyrics()">📋 Copy</button>
+            <button class="download-btn" onclick="downloadLyrics()">⬇ Download</button>
+        </div>
     </div>
     {% endif %}
 
@@ -106,7 +125,23 @@
             navigator.clipboard.writeText(text);
             alert("Lyrics copied successfully!");
         }
+
+        function downloadLyrics() {
+            let text = document.getElementById("lyricsText").innerText;
+            let filename = "lyrics.txt";
+
+            let element = document.createElement("a");
+            element.setAttribute("href", "data:text/plain;charset=utf-8," + encodeURIComponent(text));
+            element.setAttribute("download", filename);
+
+            element.style.display = "none";
+            document.body.appendChild(element);
+
+            element.click();
+
+            document.body.removeChild(element);
+        }
     </script>
 
 </body>
-</html>
+    </html>
