@@ -114,10 +114,13 @@
 
         <div class="btn-row">
             <button class="copy-btn" onclick="copyLyrics()">📋 Copy</button>
-            <button class="download-btn" onclick="downloadLyrics()">⬇ Download</button>
+            <button class="download-btn" onclick="downloadPDF()">⬇ Download PDF</button>
         </div>
     </div>
     {% endif %}
+
+    <!-- jsPDF Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
     <script>
         function copyLyrics() {
@@ -126,20 +129,19 @@
             alert("Lyrics copied successfully!");
         }
 
-        function downloadLyrics() {
+        function downloadPDF() {
+            const { jsPDF } = window.jspdf;
+            let doc = new jsPDF();
+
             let text = document.getElementById("lyricsText").innerText;
-            let filename = "lyrics.txt";
 
-            let element = document.createElement("a");
-            element.setAttribute("href", "data:text/plain;charset=utf-8," + encodeURIComponent(text));
-            element.setAttribute("download", filename);
+            doc.setFont("courier");
+            doc.setFontSize(12);
 
-            element.style.display = "none";
-            document.body.appendChild(element);
+            let lines = doc.splitTextToSize(text, 180);
+            doc.text(lines, 10, 10);
 
-            element.click();
-
-            document.body.removeChild(element);
+            doc.save("lyrics.pdf");
         }
     </script>
 
