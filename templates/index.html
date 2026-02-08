@@ -3,187 +3,143 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Lyrics AI</title>
-  <link rel="stylesheet" href="/static/style.css">
+  <title>Lyrics AI 🎵</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 
 <body>
-
   <div class="container">
+    <h1>Lyrics AI 🎵</h1>
+    <p class="subtitle">A simple Lyrics Generator built with Flask.</p>
 
-    <h1>🎵 Lyrics AI</h1>
-    <p class="subtitle">Generate professional lyrics in seconds</p>
+    <div class="form-box">
+      <label>Mode</label>
+      <select id="mode">
+        <option value="ai">AI Lyrics Mode (Smart Generated)</option>
+        <option value="random">Random Lyrics Mode</option>
+      </select>
 
-    <input type="text" id="topic" placeholder="Enter song topic (e.g love, hustle, money)">
+      <label>Song Style</label>
+      <select id="style">
+        <option value="Afrobeats">Afrobeats</option>
+        <option value="Hip-Hop">Hip-Hop</option>
+        <option value="R&B">R&B</option>
+        <option value="Pop">Pop</option>
+      </select>
 
-    <select id="style">
-      <option value="Afrobeats">Afrobeats</option>
-      <option value="Trap">Trap</option>
-      <option value="Drill">Drill</option>
-      <option value="Gospel">Gospel</option>
-      <option value="R&B">R&B</option>
-      <option value="Love Song">Love Song</option>
-    </select>
+      <label>Mood</label>
+      <select id="mood">
+        <option value="Happy">Happy</option>
+        <option value="Sad">Sad</option>
+        <option value="Motivational">Motivational</option>
+        <option value="Street">Street</option>
+      </select>
 
-    <select id="mood">
-      <option value="Happy">Happy</option>
-      <option value="Sad">Sad</option>
-      <option value="Motivational">Motivational</option>
-      <option value="Romantic">Romantic</option>
-      <option value="Street">Street</option>
-    </select>
+      <label>Artist Inspiration</label>
+      <select id="artist">
+        <option value="Burna Boy">Burna Boy</option>
+        <option value="Wizkid">Wizkid</option>
+        <option value="Drake">Drake</option>
+        <option value="Davido">Davido</option>
+      </select>
 
-    <select id="artist">
-      <option value="None">Artist Inspiration</option>
-      <option value="Wizkid">Wizkid</option>
-      <option value="Davido">Davido</option>
-      <option value="Burna Boy">Burna Boy</option>
-      <option value="Asake">Asake</option>
-      <option value="Omah Lay">Omah Lay</option>
-      <option value="Rema">Rema</option>
-      <option value="Drake">Drake</option>
-    </select>
-
-    <div class="modeBox">
-      <button class="modeBtn active" id="freeModeBtn">Free</button>
-      <button class="modeBtn" id="premiumModeBtn">Premium 🔒</button>
+      <button class="generate-btn" onclick="generateLyrics()">Generate Lyrics</button>
     </div>
 
-    <button class="generateBtn" onclick="generateLyrics()">✨ Generate Lyrics</button>
+    <div class="output-box">
+      <h2>Generated Lyrics</h2>
+      <pre id="lyricsOutput">Your lyrics will appear here...</pre>
 
-    <div id="loading" class="loading hidden">
-      ⏳ Generating lyrics...
+      <div class="btn-row">
+        <button class="copy-btn" onclick="copyLyrics()">Copy</button>
+        <button class="download-btn" onclick="downloadLyrics()">Download</button>
+        <button class="share-btn" onclick="shareLyrics()">Share</button>
+      </div>
     </div>
 
-    <div class="outputBox" id="outputBox">
-      <pre id="output">Your lyrics will appear here...</pre>
-    </div>
-
-    <div class="buttons">
-      <button class="copyBtn" onclick="copyLyrics()">📋 Copy</button>
-      <button class="downloadBtn" onclick="downloadLyrics()">⬇ Download</button>
-      <button class="shareBtn" onclick="shareLyrics()">📱 Share</button>
-    </div>
-
-    <div class="historyBox">
+    <div class="history-box">
       <h2>📜 Lyrics History</h2>
       <div id="historyList"></div>
-      <button class="clearBtn" onclick="clearHistory()">🗑 Clear History</button>
+      <button class="clear-btn" onclick="clearHistory()">🗑 Clear History</button>
     </div>
-
   </div>
 
-<script>
-  let mode = "free";
+  <script>
+    let history = [];
 
-  const freeBtn = document.getElementById("freeModeBtn");
-  const premiumBtn = document.getElementById("premiumModeBtn");
+    async function generateLyrics() {
+      const mode = document.getElementById("mode").value;
+      const style = document.getElementById("style").value;
+      const mood = document.getElementById("mood").value;
+      const artist = document.getElementById("artist").value;
 
-  freeBtn.onclick = () => {
-    mode = "free";
-    freeBtn.classList.add("active");
-    premiumBtn.classList.remove("active");
-  };
+      const formData = new FormData();
+      formData.append("mode", mode);
+      formData.append("style", style);
+      formData.append("mood", mood);
+      formData.append("artist", artist);
 
-  premiumBtn.onclick = () => {
-    alert("Premium Mode is locked 🔒\n\nLater we will connect Paystack so users can unlock Premium.");
-    mode = "premium";
-    premiumBtn.classList.add("active");
-    freeBtn.classList.remove("active");
-  };
-
-  async function generateLyrics() {
-    const topic = document.getElementById("topic").value;
-    const style = document.getElementById("style").value;
-    const mood = document.getElementById("mood").value;
-    const artist = document.getElementById("artist").value;
-
-    document.getElementById("loading").classList.remove("hidden");
-
-    const response = await fetch("/generate", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ topic, style, mood, artist, mode })
-    });
-
-    const data = await response.json();
-
-    document.getElementById("loading").classList.add("hidden");
-
-    if (data.error) {
-      alert(data.message);
-      return;
-    }
-
-    document.getElementById("output").textContent = data.lyrics;
-
-    saveToHistory(data.lyrics);
-    loadHistory();
-  }
-
-  function copyLyrics() {
-    const lyrics = document.getElementById("output").textContent;
-    navigator.clipboard.writeText(lyrics);
-    alert("Lyrics copied!");
-  }
-
-  function downloadLyrics() {
-    const lyrics = document.getElementById("output").textContent;
-    const blob = new Blob([lyrics], { type: "text/plain" });
-    const link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
-    link.download = "lyrics.txt";
-    link.click();
-  }
-
-  function shareLyrics() {
-    const lyrics = document.getElementById("output").textContent;
-
-    if (navigator.share) {
-      navigator.share({
-        title: "Lyrics AI",
-        text: lyrics
+      const response = await fetch("/generate", {
+        method: "POST",
+        body: formData
       });
-    } else {
-      alert("Sharing not supported on this device.");
-    }
-  }
 
-  function saveToHistory(lyrics) {
-    let history = JSON.parse(localStorage.getItem("lyricsHistory")) || [];
-    history.unshift(lyrics);
+      const data = await response.json();
+      document.getElementById("lyricsOutput").textContent = data.lyrics;
 
-    if (history.length > 10) {
-      history.pop();
+      // Save history
+      history.push(data.lyrics);
+      updateHistory();
     }
 
-    localStorage.setItem("lyricsHistory", JSON.stringify(history));
-  }
+    function copyLyrics() {
+      const text = document.getElementById("lyricsOutput").textContent;
+      navigator.clipboard.writeText(text);
+      alert("Lyrics copied!");
+    }
 
-  function loadHistory() {
-    let history = JSON.parse(localStorage.getItem("lyricsHistory")) || [];
-    const historyList = document.getElementById("historyList");
-    historyList.innerHTML = "";
+    function downloadLyrics() {
+      const text = document.getElementById("lyricsOutput").textContent;
+      const blob = new Blob([text], { type: "text/plain" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = "lyrics.txt";
+      link.click();
+    }
 
-    history.forEach((item, index) => {
-      const div = document.createElement("div");
-      div.className = "historyItem";
-      div.innerText = "Lyrics " + (index + 1) + " (Tap to open)";
-      div.onclick = () => {
-        document.getElementById("output").textContent = item;
-      };
-      historyList.appendChild(div);
-    });
-  }
+    function shareLyrics() {
+      const text = document.getElementById("lyricsOutput").textContent;
+      if (navigator.share) {
+        navigator.share({
+          title: "Lyrics AI",
+          text: text
+        });
+      } else {
+        alert("Share not supported on this device.");
+      }
+    }
 
-  function clearHistory() {
-    localStorage.removeItem("lyricsHistory");
-    loadHistory();
-    alert("History cleared!");
-  }
+    function updateHistory() {
+      const historyList = document.getElementById("historyList");
+      historyList.innerHTML = "";
 
-  loadHistory();
-</script>
+      history.forEach((lyrics, index) => {
+        const item = document.createElement("div");
+        item.className = "history-item";
+        item.textContent = "Lyrics " + (index + 1) + " (Tap to open)";
+        item.onclick = () => {
+          document.getElementById("lyricsOutput").textContent = lyrics;
+        };
+        historyList.appendChild(item);
+      });
+    }
+
+    function clearHistory() {
+      history = [];
+      updateHistory();
+      alert("History cleared!");
+    }
+  </script>
 
 </body>
-        </html>
+          </html>
