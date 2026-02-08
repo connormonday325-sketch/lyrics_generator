@@ -2,10 +2,6 @@ from flask import Flask, render_template, request
 
 app = Flask(__name__)
 
-@app.route("/")
-def home():
-    return render_template("index.html")
-
 def generate_ai_lyrics(style, mood, artist):
     return f"""
 [INTRO]
@@ -111,13 +107,14 @@ Feeling {mood}...
 We made it!
 """
 
-@app.route("/generate", methods=["POST"])
-def generate():
-    style = request.form.get("style")
-    mood = request.form.get("mood")
-    artist = request.form.get("artist")
-
-    lyrics = generate_ai_lyrics(style, mood, artist)
+@app.route("/", methods=["GET", "POST"])
+def home():
+    lyrics = ""
+    if request.method == "POST":
+        style = request.form.get("style")
+        mood = request.form.get("mood")
+        artist = request.form.get("artist")
+        lyrics = generate_ai_lyrics(style, mood, artist)
 
     return render_template("index.html", lyrics=lyrics)
 
