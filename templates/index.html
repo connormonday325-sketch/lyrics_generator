@@ -3,60 +3,49 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Lyrics Generator AI</title>
+  <title>Lyrics AI</title>
 
   <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-      font-family: Arial, sans-serif;
-    }
-
     body {
-      background: linear-gradient(135deg, #000000, #0b1d26);
-      min-height: 100vh;
+      font-family: Arial, sans-serif;
+      background: #0a0f14;
+      color: white;
       display: flex;
       justify-content: center;
-      align-items: center;
       padding: 20px;
-      color: white;
     }
 
     .container {
       width: 100%;
       max-width: 500px;
-      background: rgba(0, 0, 0, 0.75);
+      background: rgba(255, 255, 255, 0.05);
+      padding: 20px;
       border-radius: 20px;
-      padding: 25px;
-      box-shadow: 0 0 30px rgba(0, 255, 255, 0.25);
-      border: 2px solid rgba(0, 255, 255, 0.15);
-      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow: 0px 0px 25px rgba(0, 255, 255, 0.2);
     }
 
     h1 {
       text-align: center;
       font-size: 32px;
-      margin-bottom: 10px;
       color: cyan;
-      text-shadow: 0 0 12px rgba(0, 255, 255, 0.6);
+      margin-bottom: 5px;
     }
 
-    .subtitle {
+    p {
       text-align: center;
-      font-size: 14px;
-      opacity: 0.8;
+      color: #aaa;
       margin-bottom: 20px;
     }
 
     input, select {
       width: 100%;
       padding: 14px;
+      margin-bottom: 12px;
       border-radius: 12px;
       border: none;
-      margin-bottom: 12px;
-      font-size: 16px;
       outline: none;
+      font-size: 16px;
       background: #f2f2f2;
     }
 
@@ -64,113 +53,101 @@
       width: 100%;
       padding: 15px;
       border: none;
-      border-radius: 14px;
+      border-radius: 15px;
       font-size: 18px;
       font-weight: bold;
       cursor: pointer;
+      transition: 0.3s;
+    }
+
+    #generateBtn {
       background: cyan;
       color: black;
       margin-top: 10px;
-      transition: 0.3s ease;
-      box-shadow: 0 0 20px rgba(0, 255, 255, 0.5);
     }
 
-    button:hover {
-      transform: scale(1.03);
-      background: #00f7ff;
+    #generateBtn:hover {
+      background: #00bcbc;
     }
 
     .output-box {
       margin-top: 20px;
       padding: 15px;
+      min-height: 180px;
       border-radius: 15px;
-      border: 2px solid rgba(0, 255, 255, 0.2);
-      background: rgba(0, 0, 0, 0.6);
-      min-height: 200px;
-      font-size: 14px;
+      border: 1px solid rgba(0, 255, 255, 0.3);
+      background: rgba(0, 0, 0, 0.3);
       white-space: pre-wrap;
-      overflow-y: auto;
-      max-height: 350px;
-      line-height: 1.6;
+      font-size: 15px;
+      line-height: 1.5;
     }
 
-    .actions {
+    .btn-row {
       display: flex;
       gap: 10px;
-      margin-top: 12px;
+      margin-top: 15px;
     }
 
-    .actions button {
+    .btn-row button {
       flex: 1;
-      font-size: 14px;
+      font-size: 15px;
       padding: 12px;
+      border-radius: 12px;
     }
 
-    .copyBtn {
+    #copyBtn {
       background: #00ff88;
-      box-shadow: 0 0 15px rgba(0, 255, 136, 0.4);
+      color: black;
     }
 
-    .downloadBtn {
-      background: #ffcc00;
-      box-shadow: 0 0 15px rgba(255, 204, 0, 0.4);
+    #downloadBtn {
+      background: gold;
+      color: black;
     }
 
-    .shareBtn {
-      background: #25d366;
-      box-shadow: 0 0 15px rgba(37, 211, 102, 0.4);
+    #shareBtn {
+      background: #00ccff;
+      color: black;
     }
 
-    .historyBox {
-      margin-top: 20px;
-      padding: 12px;
+    .history-box {
+      margin-top: 25px;
+      padding: 15px;
       border-radius: 15px;
       background: rgba(255, 255, 255, 0.05);
-      border: 1px solid rgba(0, 255, 255, 0.15);
+      border: 1px solid rgba(255, 255, 255, 0.1);
     }
 
-    .historyBox h3 {
-      font-size: 16px;
+    .history-box h3 {
       margin-bottom: 10px;
+      font-size: 16px;
       color: cyan;
     }
 
     .historyItem {
+      background: rgba(0, 0, 0, 0.3);
       padding: 10px;
-      border-radius: 10px;
+      border-radius: 12px;
       margin-bottom: 8px;
-      background: rgba(0, 0, 0, 0.4);
-      font-size: 13px;
       cursor: pointer;
-      border: 1px solid rgba(255, 255, 255, 0.05);
+      font-size: 14px;
     }
 
     .historyItem:hover {
-      border: 1px solid cyan;
+      background: rgba(0, 0, 0, 0.6);
     }
 
-    .clearBtn {
+    #clearHistoryBtn {
       background: red;
+      color: white;
+      font-size: 15px;
+      padding: 12px;
       margin-top: 10px;
-      font-size: 14px;
-      padding: 10px;
-      border-radius: 10px;
-      box-shadow: none;
+      border-radius: 12px;
     }
 
-    .footer {
-      text-align: center;
-      font-size: 12px;
-      margin-top: 18px;
-      opacity: 0.6;
-    }
-
-    .loading {
-      text-align: center;
-      margin-top: 12px;
-      font-size: 14px;
-      opacity: 0.8;
-      display: none;
+    #clearHistoryBtn:hover {
+      background: darkred;
     }
   </style>
 </head>
@@ -178,161 +155,68 @@
 <body>
   <div class="container">
     <h1>🎵 Lyrics AI</h1>
-    <p class="subtitle">Generate professional lyrics in seconds</p>
+    <p>Generate professional lyrics in seconds</p>
 
-    <input type="text" id="topic" placeholder="Enter song topic (e.g love, hustle, money)" />
+    <input type="text" id="topic" placeholder="Enter song topic (e.g love, hustle, heartbreak)" />
 
     <select id="style">
       <option value="">Select Style</option>
       <option value="Afrobeats">Afrobeats</option>
-      <option value="Amapiano">Amapiano</option>
-      <option value="Trap">Trap</option>
-      <option value="Hip-Hop">Hip-Hop</option>
-      <option value="Drill">Drill</option>
+      <option value="Rap">Rap</option>
       <option value="Pop">Pop</option>
-      <option value="RnB">RnB</option>
+      <option value="Drill">Drill</option>
+      <option value="R&B">R&B</option>
       <option value="Gospel">Gospel</option>
-      <option value="Reggae">Reggae</option>
-      <option value="Dancehall">Dancehall</option>
     </select>
 
     <select id="mood">
       <option value="">Select Mood</option>
+      <option value="Motivational">Motivational</option>
       <option value="Happy">Happy</option>
       <option value="Sad">Sad</option>
       <option value="Romantic">Romantic</option>
-      <option value="Motivational">Motivational</option>
       <option value="Angry">Angry</option>
-      <option value="Party">Party</option>
+      <option value="Street">Street</option>
     </select>
 
     <select id="artist">
       <option value="">Artist Inspiration</option>
-      <option value="Burna Boy">Burna Boy</option>
       <option value="Wizkid">Wizkid</option>
       <option value="Davido">Davido</option>
-      <option value="Drake">Drake</option>
-      <option value="Lil Baby">Lil Baby</option>
+      <option value="Burna Boy">Burna Boy</option>
+      <option value="Omah Lay">Omah Lay</option>
       <option value="Asake">Asake</option>
-      <option value="Olamide">Olamide</option>
       <option value="Rema">Rema</option>
     </select>
 
-    <button onclick="generateLyrics()" id="generateBtn">✨ Generate Lyrics</button>
+    <button id="generateBtn">✨ Generate Lyrics</button>
 
-    <div class="loading" id="loading">⏳ Generating lyrics... please wait</div>
+    <div id="output" class="output-box">Your lyrics will appear here...</div>
 
-    <div class="output-box" id="output">Your lyrics will appear here...</div>
-
-    <div class="actions">
-      <button class="copyBtn" onclick="copyLyrics()">📋 Copy</button>
-      <button class="downloadBtn" onclick="downloadLyrics()">⬇ Download</button>
-      <button class="shareBtn" onclick="shareWhatsApp()">📲 Share</button>
+    <div class="btn-row">
+      <button id="copyBtn">📋 Copy</button>
+      <button id="downloadBtn">⬇ Download</button>
+      <button id="shareBtn">📲 Share</button>
     </div>
 
-    <div class="historyBox">
-      <h3>📌 Saved Lyrics</h3>
-      <div id="history"></div>
-      <button class="clearBtn" onclick="clearHistory()">🗑 Clear Saved</button>
+    <div class="history-box">
+      <h3>📜 Lyrics History</h3>
+      <div id="historyList"></div>
+      <button id="clearHistoryBtn">🗑 Clear History</button>
     </div>
-
-    <p class="footer">Made with ❤️ by Connor AI</p>
   </div>
 
   <script>
-    let generatedLyrics = "";
+    const output = document.getElementById("output");
+    const historyList = document.getElementById("historyList");
 
-    function typeLyrics(text, element) {
-      element.innerText = "";
-      let i = 0;
-
-      const interval = setInterval(() => {
-        element.innerText += text.charAt(i);
-        i++;
-
-        element.scrollTop = element.scrollHeight;
-
-        if (i >= text.length) {
-          clearInterval(interval);
-        }
-      }, 15);
-    }
-
-    async function generateLyrics() {
-      const topic = document.getElementById("topic").value;
-      const style = document.getElementById("style").value;
-      const mood = document.getElementById("mood").value;
-      const artist = document.getElementById("artist").value;
-
-      const output = document.getElementById("output");
-      const loading = document.getElementById("loading");
-      const generateBtn = document.getElementById("generateBtn");
-
-      if (!topic || !style || !mood) {
-        output.innerText = "❌ Please enter Topic, Style, and Mood.";
-        return;
-      }
-
-      loading.style.display = "block";
-      generateBtn.disabled = true;
-      generateBtn.innerText = "Generating...";
-
-      try {
-        const response = await fetch("/generate", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ topic, style, mood, artist }),
-        });
-
-        const data = await response.json();
-
-        if (data.lyrics) {
-          generatedLyrics = data.lyrics;
-          typeLyrics(data.lyrics, output);
-          saveToHistory(data.lyrics);
-        } else {
-          output.innerText = "❌ Something went wrong!";
-        }
-      } catch (error) {
-        output.innerText = "❌ Error connecting to server!";
-      }
-
-      loading.style.display = "none";
-      generateBtn.disabled = false;
-      generateBtn.innerText = "✨ Generate Lyrics";
-    }
-
-    function copyLyrics() {
-      if (!generatedLyrics) return alert("No lyrics to copy!");
-
-      navigator.clipboard.writeText(generatedLyrics);
-      alert("✅ Lyrics copied!");
-    }
-
-    function downloadLyrics() {
-      if (!generatedLyrics) return alert("No lyrics to download!");
-
-      const blob = new Blob([generatedLyrics], { type: "text/plain" });
-      const link = document.createElement("a");
-      link.href = URL.createObjectURL(blob);
-      link.download = "lyrics.txt";
-      link.click();
-    }
-
-    function shareWhatsApp() {
-      if (!generatedLyrics) return alert("No lyrics to share!");
-
-      const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(generatedLyrics)}`;
-      window.open(whatsappUrl, "_blank");
-    }
-
-    function saveToHistory(text) {
+    function saveToHistory(lyrics) {
       let history = JSON.parse(localStorage.getItem("lyricsHistory")) || [];
-      history.unshift(text);
+      history.unshift(lyrics);
 
-      if (history.length > 5) history.pop();
+      if (history.length > 10) {
+        history.pop();
+      }
 
       localStorage.setItem("lyricsHistory", JSON.stringify(history));
       loadHistory();
@@ -340,33 +224,92 @@
 
     function loadHistory() {
       let history = JSON.parse(localStorage.getItem("lyricsHistory")) || [];
-      const historyDiv = document.getElementById("history");
-
-      historyDiv.innerHTML = "";
+      historyList.innerHTML = "";
 
       history.forEach((item, index) => {
         const div = document.createElement("div");
         div.className = "historyItem";
         div.innerText = "Lyrics " + (index + 1) + " (Tap to open)";
         div.onclick = () => {
-          generatedLyrics = item;
-          document.getElementById("output").innerText = item;
+          output.innerText = item;
         };
-        historyDiv.appendChild(div);
+        historyList.appendChild(div);
       });
     }
 
     function clearHistory() {
       localStorage.removeItem("lyricsHistory");
       loadHistory();
-      alert("🗑 History cleared!");
+      alert("History cleared!");
     }
 
+    document.getElementById("clearHistoryBtn").addEventListener("click", clearHistory);
+
+    document.getElementById("generateBtn").addEventListener("click", async () => {
+      const topic = document.getElementById("topic").value.trim();
+      const style = document.getElementById("style").value;
+      const mood = document.getElementById("mood").value;
+      const artist = document.getElementById("artist").value;
+
+      if (!topic) {
+        alert("Please enter a topic!");
+        return;
+      }
+
+      output.innerText = "Generating lyrics... please wait...";
+
+      try {
+        const response = await fetch("/generate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ topic, style, mood, artist })
+        });
+
+        const data = await response.json();
+
+        if (data.lyrics) {
+          output.innerText = data.lyrics;
+          saveToHistory(data.lyrics);
+        } else {
+          output.innerText = "Error: No lyrics returned.";
+        }
+      } catch (error) {
+        output.innerText = "Error generating lyrics. Please try again.";
+      }
+    });
+
+    document.getElementById("copyBtn").addEventListener("click", () => {
+      navigator.clipboard.writeText(output.innerText);
+      alert("Lyrics copied!");
+    });
+
+    document.getElementById("downloadBtn").addEventListener("click", () => {
+      const text = output.innerText;
+      const blob = new Blob([text], { type: "text/plain" });
+      const url = URL.createObjectURL(blob);
+
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "lyrics.txt";
+      a.click();
+
+      URL.revokeObjectURL(url);
+    });
+
+    document.getElementById("shareBtn").addEventListener("click", async () => {
+      const text = output.innerText;
+
+      if (navigator.share) {
+        await navigator.share({
+          title: "Lyrics AI",
+          text: text
+        });
+      } else {
+        alert("Sharing not supported on this device.");
+      }
+    });
+
     loadHistory();
-    const topic = document.getElementById("topic").value;
-const style = document.getElementById("style").value;
-const mood = document.getElementById("mood").value;
-const artist = document.getElementById("artist").value;
   </script>
 </body>
-                                           </html>
+        </html>
