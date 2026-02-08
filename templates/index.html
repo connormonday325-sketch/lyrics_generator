@@ -1,231 +1,112 @@
-   <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Lyrics Generator</title>
-  <style>
-    body {
-      background: #0b0b0b;
-      color: white;
-      font-family: Arial, sans-serif;
-      margin: 0;
-      padding: 0;
-    }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Lyrics Generator</title>
 
-    .container {
-      max-width: 500px;
-      margin: auto;
-      padding: 20px;
-    }
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #111;
+            color: white;
+            text-align: center;
+            padding: 30px;
+        }
 
-    h1 {
-      text-align: center;
-      color: #00ff88;
-      margin-bottom: 5px;
-    }
+        h1 {
+            color: gold;
+        }
 
-    p {
-      text-align: center;
-      color: #aaa;
-      margin-bottom: 25px;
-    }
+        form {
+            background: #222;
+            padding: 20px;
+            border-radius: 10px;
+            max-width: 400px;
+            margin: auto;
+        }
 
-    .card {
-      background: #111;
-      padding: 20px;
-      border-radius: 15px;
-      margin-bottom: 20px;
-      box-shadow: 0px 0px 10px rgba(0,0,0,0.5);
-    }
+        input {
+            width: 90%;
+            padding: 12px;
+            margin: 10px 0;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+        }
 
-    label {
-      font-weight: bold;
-      display: block;
-      margin-top: 15px;
-      margin-bottom: 5px;
-    }
+        button {
+            background: gold;
+            color: black;
+            padding: 12px;
+            border: none;
+            border-radius: 5px;
+            width: 95%;
+            font-size: 18px;
+            cursor: pointer;
+            font-weight: bold;
+        }
 
-    select {
-      width: 100%;
-      padding: 12px;
-      border-radius: 10px;
-      border: none;
-      outline: none;
-      font-size: 16px;
-    }
+        button:hover {
+            background: orange;
+        }
 
-    button {
-      width: 100%;
-      margin-top: 20px;
-      padding: 15px;
-      font-size: 18px;
-      font-weight: bold;
-      background: #00ff88;
-      border: none;
-      border-radius: 12px;
-      cursor: pointer;
-    }
+        .lyrics-box {
+            margin-top: 30px;
+            background: #222;
+            padding: 20px;
+            border-radius: 10px;
+            max-width: 700px;
+            margin-left: auto;
+            margin-right: auto;
+            text-align: left;
+            white-space: pre-wrap;
+            line-height: 1.6;
+        }
 
-    button:hover {
-      background: #00cc6f;
-    }
+        .copy-btn {
+            background: limegreen;
+            color: white;
+            margin-top: 10px;
+            width: auto;
+            padding: 10px 20px;
+        }
 
-    .lyrics-box {
-      background: black;
-      padding: 15px;
-      border-radius: 12px;
-      margin-top: 15px;
-      color: #00ff88;
-      min-height: 120px;
-      font-size: 14px;
-      white-space: pre-wrap;
-    }
-
-    .actions {
-      display: flex;
-      gap: 10px;
-      margin-top: 10px;
-    }
-
-    .actions button {
-      width: 33%;
-      padding: 12px;
-      font-size: 14px;
-    }
-
-    .copy-btn {
-      background: limegreen;
-      color: black;
-    }
-
-    .download-btn {
-      background: gold;
-      color: black;
-    }
-
-    .share-btn {
-      background: dodgerblue;
-      color: black;
-    }
-  </style>
+        .copy-btn:hover {
+            background: green;
+        }
+    </style>
 </head>
 
 <body>
-  <div class="container">
 
-    <h1>Lyrics Generator</h1>
-    <p>A simple Lyrics Generator built with Flask.</p>
+    <h1>🎶 AI Lyrics Generator</h1>
+    <p>Enter mood, artist and topic then generate lyrics.</p>
 
-    <div class="card">
-      <form method="POST">
-
-        <label>Mode</label>
-        <select name="mode">
-          <option value="ai">AI Lyrics Mode (Smart Generated)</option>
-          <option value="random">Random Lyrics Mode</option>
-        </select>
-
-        <label>Song Style</label>
-        <select name="style">
-          <option value="Afrobeats">Afrobeats</option>
-          <option value="Hip Hop">Hip Hop</option>
-          <option value="Trap">Trap</option>
-          <option value="Reggae">Reggae</option>
-          <option value="R&B">R&B</option>
-        </select>
-
-        <label>Mood</label>
-        <select name="mood">
-          <option value="Motivational">Motivational</option>
-          <option value="Happy">Happy</option>
-          <option value="Sad">Sad</option>
-          <option value="Love">Love</option>
-          <option value="Street">Street</option>
-        </select>
-
-        <label>Artist Inspiration</label>
-        <select name="artist">
-          <option value="Wizkid">Wizkid</option>
-          <option value="Burna Boy">Burna Boy</option>
-          <option value="Davido">Davido</option>
-          <option value="Olamide">Olamide</option>
-          <option value="Asake">Asake</option>
-        </select>
+    <form action="/generate" method="POST">
+        <input type="text" name="mood" placeholder="Enter Mood (e.g Happy, Sad, Romantic)" required>
+        <input type="text" name="artist" placeholder="Enter Artist (e.g Wizkid, Davido)" required>
+        <input type="text" name="topic" placeholder="Enter Topic (e.g Love, Hustle, Money)" required>
 
         <button type="submit">Generate Lyrics</button>
-      </form>
+    </form>
+
+    {% if lyrics %}
+    <div class="lyrics-box">
+        <h2>🎵 Generated Lyrics</h2>
+        <pre id="lyricsText">{{ lyrics }}</pre>
+
+        <button class="copy-btn" onclick="copyLyrics()">📋 Copy Lyrics</button>
     </div>
+    {% endif %}
 
-    <div class="card">
-      <h2>Generated Lyrics</h2>
+    <script>
+        function copyLyrics() {
+            let text = document.getElementById("lyricsText").innerText;
+            navigator.clipboard.writeText(text);
+            alert("Lyrics copied successfully!");
+        }
+    </script>
 
-      <div class="lyrics-box" id="lyricsBox">
-        {% if lyrics %}
-          {{ lyrics }}
-        {% else %}
-          Your lyrics will appear here...
-        {% endif %}
-      </div>
-
-      <div class="actions">
-        <button class="copy-btn" onclick="copyLyrics()">Copy</button>
-        <button class="download-btn" onclick="downloadLyrics()">Download</button>
-        <button class="share-btn" onclick="shareLyrics()">Share</button>
-      </div>
-    </div>
-
-  </div>
-
-  <script>
-    function copyLyrics() {
-      let text = document.getElementById("lyricsBox").innerText;
-      navigator.clipboard.writeText(text);
-      alert("Lyrics copied!");
-    }
-
-    function downloadLyrics() {
-      let text = document.getElementById("lyricsBox").innerText;
-      let blob = new Blob([text], { type: "text/plain" });
-      let link = document.createElement("a");
-      link.href = URL.createObjectURL(blob);
-      link.download = "lyrics.txt";
-      link.click();
-    }
-
-    function shareLyrics() {
-      let text = document.getElementById("lyricsBox").innerText;
-
-      if (navigator.share) {
-        navigator.share({
-          title: "Generated Lyrics",
-          text: text
-        });
-      } else {
-        alert("Sharing not supported on this browser.");
-      }
-    
-<script>
-document.getElementById("generateBtn").addEventListener("click", async function () {
-    const style = document.getElementById("style").value;
-    const mood = document.getElementById("mood").value;
-    const artist = document.getElementById("artist").value;
-
-    document.getElementById("lyricsBox").innerText = "Generating lyrics... please wait...";
-
-    const formData = new FormData();
-    formData.append("style", style);
-    formData.append("mood", mood);
-    formData.append("artist", artist);
-
-    const response = await fetch("/generate", {
-        method: "POST",
-        body: formData
-    });
-
-    const data = await response.json();
-    document.getElementById("lyricsBox").innerText = data.lyrics;
-});
-</script>
 </body>
-  </html>
+</html>
