@@ -204,8 +204,28 @@
       } else {
         alert("Sharing not supported on this browser.");
       }
-    }
-  </script>
+    
+<script>
+document.getElementById("generateBtn").addEventListener("click", async function () {
+    const style = document.getElementById("style").value;
+    const mood = document.getElementById("mood").value;
+    const artist = document.getElementById("artist").value;
 
+    document.getElementById("lyricsBox").innerText = "Generating lyrics... please wait...";
+
+    const formData = new FormData();
+    formData.append("style", style);
+    formData.append("mood", mood);
+    formData.append("artist", artist);
+
+    const response = await fetch("/generate", {
+        method: "POST",
+        body: formData
+    });
+
+    const data = await response.json();
+    document.getElementById("lyricsBox").innerText = data.lyrics;
+});
+</script>
 </body>
   </html>
