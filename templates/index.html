@@ -7,107 +7,91 @@
 
   <style>
     body {
+      background: #050505;
       font-family: Arial, sans-serif;
-      background: #0a0f14;
       color: white;
-      display: flex;
-      justify-content: center;
+      text-align: center;
       padding: 20px;
     }
 
     .container {
-      width: 100%;
-      max-width: 500px;
-      background: rgba(255, 255, 255, 0.05);
+      max-width: 450px;
+      margin: auto;
       padding: 20px;
       border-radius: 20px;
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      box-shadow: 0px 0px 25px rgba(0, 255, 255, 0.2);
+      background: rgba(0, 0, 0, 0.7);
+      box-shadow: 0 0 30px rgba(0, 255, 255, 0.3);
     }
 
     h1 {
-      text-align: center;
-      font-size: 32px;
       color: cyan;
-      margin-bottom: 5px;
+      font-size: 32px;
+      margin-bottom: 10px;
     }
 
     p {
-      text-align: center;
-      color: #aaa;
-      margin-bottom: 20px;
+      font-size: 14px;
+      color: #ccc;
     }
 
     input, select {
       width: 100%;
-      padding: 14px;
-      margin-bottom: 12px;
+      padding: 15px;
+      margin: 10px 0;
       border-radius: 12px;
       border: none;
-      outline: none;
       font-size: 16px;
-      background: #f2f2f2;
+      outline: none;
     }
 
     button {
       width: 100%;
       padding: 15px;
-      border: none;
       border-radius: 15px;
+      border: none;
       font-size: 18px;
-      font-weight: bold;
       cursor: pointer;
-      transition: 0.3s;
+      margin-top: 10px;
+      font-weight: bold;
     }
 
-    #generateBtn {
+    .generate-btn {
       background: cyan;
       color: black;
-      margin-top: 10px;
+      box-shadow: 0 0 20px rgba(0, 255, 255, 0.6);
     }
 
-    #generateBtn:hover {
-      background: #00bcbc;
-    }
-
-    .output-box {
+    .output {
       margin-top: 20px;
+      background: rgba(0, 0, 0, 0.9);
       padding: 15px;
-      min-height: 180px;
       border-radius: 15px;
-      border: 1px solid rgba(0, 255, 255, 0.3);
-      background: rgba(0, 0, 0, 0.3);
+      min-height: 180px;
+      text-align: left;
       white-space: pre-wrap;
-      font-size: 15px;
-      line-height: 1.5;
+      border: 1px solid rgba(0, 255, 255, 0.3);
     }
 
-    .btn-row {
+    .buttons-row {
       display: flex;
+      justify-content: space-between;
       gap: 10px;
       margin-top: 15px;
     }
 
-    .btn-row button {
+    .copy-btn {
+      background: lime;
       flex: 1;
-      font-size: 15px;
-      padding: 12px;
-      border-radius: 12px;
     }
 
-    #copyBtn {
-      background: #00ff88;
-      color: black;
-    }
-
-    #downloadBtn {
+    .download-btn {
       background: gold;
-      color: black;
+      flex: 1;
     }
 
-    #shareBtn {
-      background: #00ccff;
-      color: black;
+    .share-btn {
+      background: deepskyblue;
+      flex: 1;
     }
 
     .history-box {
@@ -115,39 +99,50 @@
       padding: 15px;
       border-radius: 15px;
       background: rgba(255, 255, 255, 0.05);
-      border: 1px solid rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(0, 255, 255, 0.2);
+      text-align: left;
     }
 
-    .history-box h3 {
+    .history-title {
+      font-size: 18px;
       margin-bottom: 10px;
-      font-size: 16px;
       color: cyan;
+      font-weight: bold;
     }
 
-    .historyItem {
-      background: rgba(0, 0, 0, 0.3);
+    .history-item {
       padding: 10px;
-      border-radius: 12px;
-      margin-bottom: 8px;
+      margin: 5px 0;
+      background: rgba(0, 0, 0, 0.6);
+      border-radius: 10px;
       cursor: pointer;
       font-size: 14px;
+      border: 1px solid rgba(0, 255, 255, 0.2);
     }
 
-    .historyItem:hover {
-      background: rgba(0, 0, 0, 0.6);
-    }
-
-    #clearHistoryBtn {
+    .clear-btn {
+      width: 100%;
       background: red;
       color: white;
-      font-size: 15px;
-      padding: 12px;
       margin-top: 10px;
-      border-radius: 12px;
     }
 
-    #clearHistoryBtn:hover {
-      background: darkred;
+    .mode-box {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .mode-box button {
+      flex: 1;
+      font-size: 14px;
+      padding: 10px;
+      border-radius: 10px;
+    }
+
+    .active {
+      border: 2px solid cyan;
     }
   </style>
 </head>
@@ -157,60 +152,116 @@
     <h1>🎵 Lyrics AI</h1>
     <p>Generate professional lyrics in seconds</p>
 
-    <input type="text" id="topic" placeholder="Enter song topic (e.g love, hustle, heartbreak)" />
+    <input type="text" id="topic" placeholder="Enter song topic (e.g love, hustle)" />
 
     <select id="style">
-      <option value="">Select Style</option>
+      <option value="Trap">Trap</option>
       <option value="Afrobeats">Afrobeats</option>
-      <option value="Rap">Rap</option>
-      <option value="Pop">Pop</option>
-      <option value="Drill">Drill</option>
+      <option value="Hip Hop">Hip Hop</option>
       <option value="R&B">R&B</option>
-      <option value="Gospel">Gospel</option>
     </select>
 
     <select id="mood">
-      <option value="">Select Mood</option>
       <option value="Motivational">Motivational</option>
-      <option value="Happy">Happy</option>
+      <option value="Love">Love</option>
       <option value="Sad">Sad</option>
-      <option value="Romantic">Romantic</option>
-      <option value="Angry">Angry</option>
-      <option value="Street">Street</option>
+      <option value="Party">Party</option>
     </select>
 
     <select id="artist">
-      <option value="">Artist Inspiration</option>
       <option value="Wizkid">Wizkid</option>
       <option value="Davido">Davido</option>
       <option value="Burna Boy">Burna Boy</option>
-      <option value="Omah Lay">Omah Lay</option>
-      <option value="Asake">Asake</option>
-      <option value="Rema">Rema</option>
+      <option value="Drake">Drake</option>
+      <option value="Future">Future</option>
+      <option value="Chris Brown">Chris Brown</option>
     </select>
 
-    <button id="generateBtn">✨ Generate Lyrics</button>
+    <div class="mode-box">
+      <button id="aiMode" class="active" onclick="setMode('ai')">✨ AI Lyrics</button>
+      <button id="randomMode" onclick="setMode('random')">🎲 Random Lyrics</button>
+    </div>
 
-    <div id="output" class="output-box">Your lyrics will appear here...</div>
+    <button class="generate-btn" onclick="generateLyrics()">✨ Generate Lyrics</button>
 
-    <div class="btn-row">
-      <button id="copyBtn">📋 Copy</button>
-      <button id="downloadBtn">⬇ Download</button>
-      <button id="shareBtn">📲 Share</button>
+    <div class="output" id="output">Your lyrics will appear here...</div>
+
+    <div class="buttons-row">
+      <button class="copy-btn" onclick="copyLyrics()">📋 Copy</button>
+      <button class="download-btn" onclick="downloadLyrics()">⬇ Download</button>
+      <button class="share-btn" onclick="shareLyrics()">📲 Share</button>
     </div>
 
     <div class="history-box">
-      <h3>📜 Lyrics History</h3>
-      <div id="historyList"></div>
-      <button id="clearHistoryBtn">🗑 Clear History</button>
+      <div class="history-title">📜 Lyrics History</div>
+      <div id="history"></div>
+      <button class="clear-btn" onclick="clearHistory()">🗑 Clear History</button>
     </div>
   </div>
 
   <script>
-    const output = document.getElementById("output");
-    const historyList = document.getElementById("historyList");
+    let mode = "ai";
 
-    function saveToHistory(lyrics) {
+    function setMode(selectedMode) {
+      mode = selectedMode;
+
+      document.getElementById("aiMode").classList.remove("active");
+      document.getElementById("randomMode").classList.remove("active");
+
+      if (selectedMode === "ai") {
+        document.getElementById("aiMode").classList.add("active");
+      } else {
+        document.getElementById("randomMode").classList.add("active");
+      }
+    }
+
+    async function generateLyrics() {
+      const topic = document.getElementById("topic").value || "Hustle";
+      const style = document.getElementById("style").value;
+      const mood = document.getElementById("mood").value;
+      const artist = document.getElementById("artist").value;
+
+      const res = await fetch("/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ topic, style, mood, artist, mode })
+      });
+
+      const data = await res.json();
+      document.getElementById("output").innerText = data.lyrics;
+
+      saveHistory(data.lyrics);
+    }
+
+    function copyLyrics() {
+      const text = document.getElementById("output").innerText;
+      navigator.clipboard.writeText(text);
+      alert("✅ Lyrics copied!");
+    }
+
+    function downloadLyrics() {
+      const text = document.getElementById("output").innerText;
+      const blob = new Blob([text], { type: "text/plain" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = "lyrics.txt";
+      link.click();
+    }
+
+    function shareLyrics() {
+      const text = document.getElementById("output").innerText;
+
+      if (navigator.share) {
+        navigator.share({
+          title: "Lyrics AI",
+          text: text
+        });
+      } else {
+        alert("Sharing not supported on this browser.");
+      }
+    }
+
+    function saveHistory(lyrics) {
       let history = JSON.parse(localStorage.getItem("lyricsHistory")) || [];
       history.unshift(lyrics);
 
@@ -223,93 +274,29 @@
     }
 
     function loadHistory() {
+      const historyDiv = document.getElementById("history");
+      historyDiv.innerHTML = "";
+
       let history = JSON.parse(localStorage.getItem("lyricsHistory")) || [];
-      historyList.innerHTML = "";
 
       history.forEach((item, index) => {
         const div = document.createElement("div");
-        div.className = "historyItem";
+        div.className = "history-item";
         div.innerText = "Lyrics " + (index + 1) + " (Tap to open)";
         div.onclick = () => {
-          output.innerText = item;
+          document.getElementById("output").innerText = item;
         };
-        historyList.appendChild(div);
+        historyDiv.appendChild(div);
       });
     }
 
     function clearHistory() {
       localStorage.removeItem("lyricsHistory");
       loadHistory();
-      alert("History cleared!");
+      alert("🗑 History cleared!");
     }
-
-    document.getElementById("clearHistoryBtn").addEventListener("click", clearHistory);
-
-    document.getElementById("generateBtn").addEventListener("click", async () => {
-      const topic = document.getElementById("topic").value.trim();
-      const style = document.getElementById("style").value;
-      const mood = document.getElementById("mood").value;
-      const artist = document.getElementById("artist").value;
-
-      if (!topic) {
-        alert("Please enter a topic!");
-        return;
-      }
-
-      output.innerText = "Generating lyrics... please wait...";
-
-      try {
-        const response = await fetch("/generate", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ topic, style, mood, artist })
-        });
-
-        const data = await response.json();
-
-        if (data.lyrics) {
-          output.innerText = data.lyrics;
-          saveToHistory(data.lyrics);
-        } else {
-          output.innerText = "Error: No lyrics returned.";
-        }
-      } catch (error) {
-        output.innerText = "Error generating lyrics. Please try again.";
-      }
-    });
-
-    document.getElementById("copyBtn").addEventListener("click", () => {
-      navigator.clipboard.writeText(output.innerText);
-      alert("Lyrics copied!");
-    });
-
-    document.getElementById("downloadBtn").addEventListener("click", () => {
-      const text = output.innerText;
-      const blob = new Blob([text], { type: "text/plain" });
-      const url = URL.createObjectURL(blob);
-
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "lyrics.txt";
-      a.click();
-
-      URL.revokeObjectURL(url);
-    });
-
-    document.getElementById("shareBtn").addEventListener("click", async () => {
-      const text = output.innerText;
-
-      if (navigator.share) {
-        await navigator.share({
-          title: "Lyrics AI",
-          text: text
-        });
-      } else {
-        alert("Sharing not supported on this device.");
-      }
-    });
 
     loadHistory();
   </script>
 </body>
-        </html>
+  </html>
