@@ -1,7 +1,11 @@
 from flask import Flask, render_template, request
+import random
 
 app = Flask(__name__)
 
+# -------------------------
+# AI Lyrics Generator (Smart Mode)
+# -------------------------
 def generate_ai_lyrics(style, mood, artist):
     return f"""
 [INTRO]
@@ -67,17 +71,6 @@ Blessings from above, I dey thank my life
 All my enemies, dem dey watch my shine
 But I no go fall, I go always rise
 
-[VERSE 3]
-Now I dey flex small, but I still dey humble
-Because I know say life fit make man stumble
-I no dey trust anybody too much
-I just dey focus, I just dey clutch
-
-My mama prayers dey cover my head
-Even when my pocket empty like bread
-I go make am, I swear on my soul
-This {style} sound dey heal my whole
-
 [BRIDGE]
 Oh oh oh...
 We go rise, we go shine
@@ -107,16 +100,67 @@ Feeling {mood}...
 We made it!
 """
 
+
+# -------------------------
+# Random Lyrics Generator (Simple Mode)
+# -------------------------
+def generate_random_lyrics():
+    random_lines = [
+        "I dey grind till the morning light",
+        "Blessings dey come like steady rain",
+        "My dreams big pass my fears",
+        "Nobody fit stop my shine",
+        "I go make am no matter the pain",
+        "Street taught me lessons, now I dey wise",
+        "I no dey beg, I dey hustle",
+        "My life na movie, my story na gold",
+        "Everything I touch turn to blessing",
+        "I dey rise, I no dey fall"
+    ]
+
+    chorus = """
+[CHORUS]
+Oh oh oh...
+I dey shine, I dey glow
+Oh oh oh...
+Blessings dey flow
+"""
+
+    verse = "\n".join(random.sample(random_lines, 6))
+
+    return f"""
+[VERSE]
+{verse}
+
+{chorus}
+
+[VERSE 2]
+{verse}
+
+{chorus}
+"""
+
+
+# -------------------------
+# Main Route
+# -------------------------
 @app.route("/", methods=["GET", "POST"])
 def home():
     lyrics = ""
+
     if request.method == "POST":
+        mode = request.form.get("mode")
         style = request.form.get("style")
         mood = request.form.get("mood")
         artist = request.form.get("artist")
-        lyrics = generate_ai_lyrics(style, mood, artist)
+
+        if mode == "ai":
+            lyrics = generate_ai_lyrics(style, mood, artist)
+        else:
+            lyrics = generate_random_lyrics()
 
     return render_template("index.html", lyrics=lyrics)
+
 
 if __name__ == "__main__":
     app.run(debug=True)
