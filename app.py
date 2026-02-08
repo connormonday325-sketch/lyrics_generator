@@ -1,3 +1,6 @@
+from flask import Flask
+
+app = Flask(__name__)
 def generate_ai_lyrics(style, mood, artist):
     return f"""
 [INTRO]
