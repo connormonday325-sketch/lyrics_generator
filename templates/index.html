@@ -1,145 +1,211 @@
-<!DOCTYPE html>
+   <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Lyrics AI 🎵</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Lyrics Generator</title>
+  <style>
+    body {
+      background: #0b0b0b;
+      color: white;
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+    }
+
+    .container {
+      max-width: 500px;
+      margin: auto;
+      padding: 20px;
+    }
+
+    h1 {
+      text-align: center;
+      color: #00ff88;
+      margin-bottom: 5px;
+    }
+
+    p {
+      text-align: center;
+      color: #aaa;
+      margin-bottom: 25px;
+    }
+
+    .card {
+      background: #111;
+      padding: 20px;
+      border-radius: 15px;
+      margin-bottom: 20px;
+      box-shadow: 0px 0px 10px rgba(0,0,0,0.5);
+    }
+
+    label {
+      font-weight: bold;
+      display: block;
+      margin-top: 15px;
+      margin-bottom: 5px;
+    }
+
+    select {
+      width: 100%;
+      padding: 12px;
+      border-radius: 10px;
+      border: none;
+      outline: none;
+      font-size: 16px;
+    }
+
+    button {
+      width: 100%;
+      margin-top: 20px;
+      padding: 15px;
+      font-size: 18px;
+      font-weight: bold;
+      background: #00ff88;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #00cc6f;
+    }
+
+    .lyrics-box {
+      background: black;
+      padding: 15px;
+      border-radius: 12px;
+      margin-top: 15px;
+      color: #00ff88;
+      min-height: 120px;
+      font-size: 14px;
+      white-space: pre-wrap;
+    }
+
+    .actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .actions button {
+      width: 33%;
+      padding: 12px;
+      font-size: 14px;
+    }
+
+    .copy-btn {
+      background: limegreen;
+      color: black;
+    }
+
+    .download-btn {
+      background: gold;
+      color: black;
+    }
+
+    .share-btn {
+      background: dodgerblue;
+      color: black;
+    }
+  </style>
 </head>
 
 <body>
   <div class="container">
-    <h1>Lyrics AI 🎵</h1>
-    <p class="subtitle">A simple Lyrics Generator built with Flask.</p>
 
-    <div class="form-box">
-      <label>Mode</label>
-      <select id="mode">
-        <option value="ai">AI Lyrics Mode (Smart Generated)</option>
-        <option value="random">Random Lyrics Mode</option>
-      </select>
+    <h1>Lyrics Generator</h1>
+    <p>A simple Lyrics Generator built with Flask.</p>
 
-      <label>Song Style</label>
-      <select id="style">
-        <option value="Afrobeats">Afrobeats</option>
-        <option value="Hip-Hop">Hip-Hop</option>
-        <option value="R&B">R&B</option>
-        <option value="Pop">Pop</option>
-      </select>
+    <div class="card">
+      <form method="POST">
 
-      <label>Mood</label>
-      <select id="mood">
-        <option value="Happy">Happy</option>
-        <option value="Sad">Sad</option>
-        <option value="Motivational">Motivational</option>
-        <option value="Street">Street</option>
-      </select>
+        <label>Mode</label>
+        <select name="mode">
+          <option value="ai">AI Lyrics Mode (Smart Generated)</option>
+          <option value="random">Random Lyrics Mode</option>
+        </select>
 
-      <label>Artist Inspiration</label>
-      <select id="artist">
-        <option value="Burna Boy">Burna Boy</option>
-        <option value="Wizkid">Wizkid</option>
-        <option value="Drake">Drake</option>
-        <option value="Davido">Davido</option>
-      </select>
+        <label>Song Style</label>
+        <select name="style">
+          <option value="Afrobeats">Afrobeats</option>
+          <option value="Hip Hop">Hip Hop</option>
+          <option value="Trap">Trap</option>
+          <option value="Reggae">Reggae</option>
+          <option value="R&B">R&B</option>
+        </select>
 
-      <button class="generate-btn" onclick="generateLyrics()">Generate Lyrics</button>
+        <label>Mood</label>
+        <select name="mood">
+          <option value="Motivational">Motivational</option>
+          <option value="Happy">Happy</option>
+          <option value="Sad">Sad</option>
+          <option value="Love">Love</option>
+          <option value="Street">Street</option>
+        </select>
+
+        <label>Artist Inspiration</label>
+        <select name="artist">
+          <option value="Wizkid">Wizkid</option>
+          <option value="Burna Boy">Burna Boy</option>
+          <option value="Davido">Davido</option>
+          <option value="Olamide">Olamide</option>
+          <option value="Asake">Asake</option>
+        </select>
+
+        <button type="submit">Generate Lyrics</button>
+      </form>
     </div>
 
-    <div class="output-box">
+    <div class="card">
       <h2>Generated Lyrics</h2>
-      <pre id="lyricsOutput">Your lyrics will appear here...</pre>
 
-      <div class="btn-row">
+      <div class="lyrics-box" id="lyricsBox">
+        {% if lyrics %}
+          {{ lyrics }}
+        {% else %}
+          Your lyrics will appear here...
+        {% endif %}
+      </div>
+
+      <div class="actions">
         <button class="copy-btn" onclick="copyLyrics()">Copy</button>
         <button class="download-btn" onclick="downloadLyrics()">Download</button>
         <button class="share-btn" onclick="shareLyrics()">Share</button>
       </div>
     </div>
 
-    <div class="history-box">
-      <h2>📜 Lyrics History</h2>
-      <div id="historyList"></div>
-      <button class="clear-btn" onclick="clearHistory()">🗑 Clear History</button>
-    </div>
   </div>
 
   <script>
-    let history = [];
-
-    async function generateLyrics() {
-      const mode = document.getElementById("mode").value;
-      const style = document.getElementById("style").value;
-      const mood = document.getElementById("mood").value;
-      const artist = document.getElementById("artist").value;
-
-      const formData = new FormData();
-      formData.append("mode", mode);
-      formData.append("style", style);
-      formData.append("mood", mood);
-      formData.append("artist", artist);
-
-      const response = await fetch("/generate", {
-        method: "POST",
-        body: formData
-      });
-
-      const data = await response.json();
-      document.getElementById("lyricsOutput").textContent = data.lyrics;
-
-      // Save history
-      history.push(data.lyrics);
-      updateHistory();
-    }
-
     function copyLyrics() {
-      const text = document.getElementById("lyricsOutput").textContent;
+      let text = document.getElementById("lyricsBox").innerText;
       navigator.clipboard.writeText(text);
       alert("Lyrics copied!");
     }
 
     function downloadLyrics() {
-      const text = document.getElementById("lyricsOutput").textContent;
-      const blob = new Blob([text], { type: "text/plain" });
-      const link = document.createElement("a");
+      let text = document.getElementById("lyricsBox").innerText;
+      let blob = new Blob([text], { type: "text/plain" });
+      let link = document.createElement("a");
       link.href = URL.createObjectURL(blob);
       link.download = "lyrics.txt";
       link.click();
     }
 
     function shareLyrics() {
-      const text = document.getElementById("lyricsOutput").textContent;
+      let text = document.getElementById("lyricsBox").innerText;
+
       if (navigator.share) {
         navigator.share({
-          title: "Lyrics AI",
+          title: "Generated Lyrics",
           text: text
         });
       } else {
-        alert("Share not supported on this device.");
+        alert("Sharing not supported on this browser.");
       }
-    }
-
-    function updateHistory() {
-      const historyList = document.getElementById("historyList");
-      historyList.innerHTML = "";
-
-      history.forEach((lyrics, index) => {
-        const item = document.createElement("div");
-        item.className = "history-item";
-        item.textContent = "Lyrics " + (index + 1) + " (Tap to open)";
-        item.onclick = () => {
-          document.getElementById("lyricsOutput").textContent = lyrics;
-        };
-        historyList.appendChild(item);
-      });
-    }
-
-    function clearHistory() {
-      history = [];
-      updateHistory();
-      alert("History cleared!");
     }
   </script>
 
 </body>
-          </html>
+  </html>
