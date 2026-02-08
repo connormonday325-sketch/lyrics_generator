@@ -3,6 +3,54 @@ import random
 
 app = Flask(__name__)
 
+@app.route("/")
+def home():
+    return render_template("index.html")
+
+@app.route("/generate", methods=["POST"])
+def generate():
+data = request.form
+
+    mood = data.get("mood", "Happy")
+    artist = data.get("artist", "Wizkid")
+    topic = data.get("topic", "Love")
+
+    lyrics = f"""
+[INTRO]
+Yeah yeah...
+This one na {mood} vibe...
+Inspired by {artist}...
+
+[VERSE 1]
+I dey hustle everyday, no time to sleep
+Blessings follow me, I pray make e deep
+Life no easy but I stand my ground
+Even when dem laugh, I no back down
+
+[CHORUS]
+Oh oh oh, {topic} dey my mind
+Everyday I pray make my star shine
+No more stress, I just wan feel fine
+Me I go rise, me I go shine
+
+[VERSE 2]
+From the gutter to the glory I dey climb
+God dey guide me, everything align
+Enemies watching but I no send
+Blessings coming, e no get end
+
+[OUTRO]
+Yeah yeah...
+{artist} vibe...
+We move!
+"""
+
+    return jsonify({"lyrics": lyrics})
+
+
+if __name__ == "__main__":
+    app.run(debug=True)
+
 
 # ===============================
 # RANDOM LYRICS GENERATOR SYSTEM
