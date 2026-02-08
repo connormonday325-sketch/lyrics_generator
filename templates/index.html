@@ -7,112 +7,166 @@
 
   <style>
     body {
+      background: #0a0a0a;
       font-family: Arial, sans-serif;
-      background: #111;
       color: white;
+      display: flex;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 420px;
       text-align: center;
-      padding: 30px;
+      background: #151515;
+      padding: 25px;
+      border-radius: 20px;
+      box-shadow: 0 0 20px rgba(0, 255, 255, 0.2);
+      border: 2px solid rgba(0, 255, 255, 0.2);
     }
 
     h1 {
       color: cyan;
-      font-size: 40px;
-      margin-bottom: 10px;
-    }
-
-    .container {
-      max-width: 500px;
-      margin: auto;
-      background: #1a1a1a;
-      padding: 25px;
-      border-radius: 15px;
-      box-shadow: 0px 0px 20px rgba(0, 255, 255, 0.2);
+      font-size: 32px;
+      margin-bottom: 25px;
+      text-shadow: 0 0 10px cyan;
     }
 
     input, select {
-      width: 90%;
-      padding: 12px;
-      margin: 10px 0;
-      border-radius: 8px;
+      width: 100%;
+      padding: 14px;
+      border-radius: 10px;
       border: none;
-      outline: none;
+      margin-bottom: 15px;
       font-size: 16px;
+      outline: none;
     }
 
     button {
-      background: cyan;
+      width: 100%;
+      padding: 14px;
+      border-radius: 12px;
       border: none;
-      padding: 12px 25px;
-      border-radius: 10px;
+      background: cyan;
       font-size: 18px;
-      cursor: pointer;
       font-weight: bold;
-      margin-top: 10px;
+      cursor: pointer;
+      margin-top: 5px;
+      transition: 0.2s;
     }
 
     button:hover {
-      background: #00b3b3;
+      background: #00dcdc;
     }
 
-    pre {
-      background: #000;
-      padding: 15px;
-      border-radius: 10px;
-      text-align: left;
-      white-space: pre-wrap;
+    .lyrics-box {
       margin-top: 20px;
+      background: black;
+      padding: 15px;
+      border-radius: 15px;
+      text-align: left;
+      font-family: monospace;
+      white-space: pre-wrap;
+      min-height: 150px;
+      box-shadow: inset 0 0 10px rgba(0, 255, 255, 0.2);
+    }
+
+    .btn-row {
+      display: flex;
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .btn-row button {
+      width: 50%;
+      background: #222;
+      color: cyan;
+      border: 1px solid cyan;
       font-size: 15px;
-      line-height: 1.5;
+    }
+
+    .btn-row button:hover {
+      background: cyan;
+      color: black;
     }
 
     .loading {
       margin-top: 15px;
-      font-size: 16px;
       color: cyan;
+      font-weight: bold;
       display: none;
+    }
+
+    .footer {
+      margin-top: 15px;
+      font-size: 12px;
+      opacity: 0.6;
     }
   </style>
 </head>
 
 <body>
-  <h1>🎶 Lyrics Generator 🎶</h1>
-
   <div class="container">
-    <input id="topic" type="text" placeholder="Enter song topic (e.g love, hustle, money)" />
+    <h1>🎶 Lyrics Generator 🎶</h1>
+
+    <input id="topic" type="text" placeholder="Enter song topic (e.g love, hustle)" />
 
     <select id="style">
+      <option value="">Select style</option>
       <option value="Afrobeat">Afrobeat</option>
       <option value="Rap">Rap</option>
       <option value="Drill">Drill</option>
       <option value="R&B">R&B</option>
+      <option value="Pop">Pop</option>
       <option value="Gospel">Gospel</option>
     </select>
 
     <button onclick="generateLyrics()">Generate Lyrics</button>
 
-    <div class="loading" id="loadingText">⏳ Generating lyrics... please wait</div>
+    <div class="loading" id="loading">⏳ Generating lyrics...</div>
 
-    <pre id="output">Your lyrics will appear here...</pre>
+    <div class="lyrics-box" id="lyricsOutput">
+Your lyrics will appear here...
+    </div>
+
+    <div class="btn-row">
+      <button onclick="copyLyrics()">📋 Copy</button>
+      <button onclick="downloadLyrics()">⬇ Download</button>
+    </div>
+
+    <div class="footer">
+      Built by Connor 💙
+    </div>
   </div>
 
   <script>
+    // Load saved lyrics when page opens
+    window.onload = function () {
+      const savedLyrics = localStorage.getItem("savedLyrics");
+      if (savedLyrics) {
+        document.getElementById("lyricsOutput").innerText = savedLyrics;
+      }
+    };
+
     function generateLyrics() {
       const topic = document.getElementById("topic").value.trim();
-      const style = document.getElementById("style").value;
+      const style = document.getElementById("style").value.trim();
+      const output = document.getElementById("lyricsOutput");
+      const loading = document.getElementById("loading");
 
-      if (!topic) {
-        alert("Please enter a topic!");
+      if (!topic || !style) {
+        output.innerText = "⚠ Please enter a topic and select a style.";
         return;
       }
 
-      document.getElementById("loadingText").style.display = "block";
-      document.getElementById("output").innerText = "";
+      loading.style.display = "block";
+      output.innerText = "";
 
-      let lyrics = "";
-
-      if (style === "Afrobeat") {
-        lyrics = `
-🎵 STYLE: AFROBEAT 🎵
+      // Fake delay for loading effect
+      setTimeout(() => {
+        const lyrics = `
+🎵 STYLE: ${style} 🎵
 TOPIC: ${topic}
 
 [Intro]
@@ -121,196 +175,68 @@ Oh baby ohhh...
 
 [Verse 1]
 I dey think about you every night,
-Your love dey make my heart feel light,
-Even when the world dey stress me,
-Na your smile dey bless me.
-
-I no fit lie, you be my peace,
-Anytime you talk my worries cease,
-If love na crime, make dem arrest me,
-Cause I no go ever forget me.
+Your love dey give me sweet delight,
+Even for darkness you be my light,
+Girl you dey make my world feel right.
 
 [Chorus]
-Oh my love, you be my vibe,
-You dey make my soul come alive,
-When you hold me, I no go hide,
-Baby girl, na you be my pride.
-
-Oh my love, you be my song,
-Even for the night you shine strong,
-No matter the pain, I go stay long,
-Cause your love dey keep me strong.
+Ohhh my love no go lie,
+You be the reason I dey fly,
+Anywhere you go I go follow,
+Na you be my tomorrow.
 
 [Verse 2]
-City lights but my mind on you,
-Every road I walk na because of you,
-Dem say love no easy but I dey try,
-For your matter baby I fit fly.
-
-I go hustle, I go grind for you,
-Make I build a better life for you,
-If you fall, I go catch you fast,
-This our love go forever last.
+City lights and the midnight breeze,
+You dey calm my mind like sweet peace,
+No matter the stress or enemies,
+Na your love dey put me at ease.
 
 [Bridge]
-Baby dance with me slow slow,
-Make the whole world know know,
-Say na you I choose for life,
-Na you be my future wife.
+Hold me close, no let me go,
+Na you be the one wey I know,
+Forever together, we go glow,
+My heart dey beat for you so.
 
 [Outro]
 Yeah yeah...
-Love na you be my blessing...
-        `;
-      }
+Love no go finish...
+        `.trim();
 
-      else if (style === "Rap") {
-        lyrics = `
-🎤 STYLE: RAP 🎤
-TOPIC: ${topic}
+        output.innerText = lyrics;
 
-[Intro]
-Yeah...
-Listen...
+        // Save lyrics
+        localStorage.setItem("savedLyrics", lyrics);
 
-[Verse 1]
-I been fighting demons, I been chasing dreams,
-Life ain't what it seems, everything in extremes,
-I remember nights when the pain was loud,
-Now I'm standing tall, I ain't bowing down.
-
-They doubted my hustle, they doubted my grind,
-But I kept my focus, I kept my mind,
-${topic} on my chest like a heavy chain,
-But I turn that struggle into power and gain.
-
-[Hook]
-I rise, I fall, I stand again,
-Through the scars, through the rain,
-No fear in my veins, no weakness inside,
-I'm built for the storm, I'm ready to ride.
-
-[Verse 2]
-I got goals bigger than the hate they bring,
-I'm chasing crowns, yeah I'm chasing kings,
-If I lose today, I win tomorrow,
-I turn my pain into less sorrow.
-
-I'm writing my story, no skipping the page,
-I'm breaking these walls, I'm breaking this cage,
-${topic} in my heart but I stay so strong,
-Cause my destiny been waiting too long.
-
-[Outro]
-Yeah...
-We keep going...
-        `;
-      }
-
-      else if (style === "Drill") {
-        lyrics = `
-🔥 STYLE: DRILL 🔥
-TOPIC: ${topic}
-
-[Intro]
-Ayy...
-Listen up...
-
-[Verse 1]
-Late nights, cold streets, heart on freeze,
-Enemies watching, they move like thieves,
-${topic} in my mind, it don't let me sleep,
-But I'm still on grind, gotta stack that heap.
-
-No love for the fake, no trust for the weak,
-Talk too much, now you lookin' cheap,
-I been through pain, I been through fire,
-Now I’m built like steel, I aim much higher.
-
-[Hook]
-Step in the dark, still shine bright,
-If I want it, I'ma take that life,
-No fear, no tears, just pure fight,
-I survive the storm every single night.
-
-[Verse 2]
-They don't know the struggle, they don't know the pain,
-They don't know my story, they just see the fame,
-I move with my bros, we don't play no games,
-${topic} made me cold, made me change my name.
-
-I remember days when the food was low,
-Now I’m on top and my vision glow,
-If you betray, then you gotta go,
-Cause in my world we move like snow.
-
-[Outro]
-Ayy...
-We move...
-        `;
-      }
-
-      else if (style === "R&B") {
-        lyrics = `
-💙 STYLE: R&B 💙
-TOPIC: ${topic}
-
-[Verse 1]
-Baby when you call my name,
-It feels like fire, it feels like flame,
-I’ve been searching for a love so true,
-Now I found it all in you.
-
-[Chorus]
-${topic} got me feeling weak,
-Got me dreaming while I'm still awake,
-I don't wanna lose this feeling now,
-Cause your love is all I need somehow.
-
-[Verse 2]
-Hold me close and don’t let go,
-I want this love to always grow,
-No matter the pain, no matter the fight,
-I'll be yours every day and night.
-
-[Outro]
-Ooh baby...
-        `;
-      }
-
-      else if (style === "Gospel") {
-        lyrics = `
-🙏 STYLE: GOSPEL 🙏
-TOPIC: ${topic}
-
-[Verse 1]
-When the storm was rising high,
-You were there, You heard my cry,
-You gave me strength, You gave me peace,
-In Your love my fears release.
-
-[Chorus]
-Lord I lift my hands to You,
-For ${topic} You pulled me through,
-Every battle You have won,
-In Your light I see the sun.
-
-[Verse 2]
-Even when the road was long,
-You gave my heart a brand new song,
-Now I stand, I testify,
-You are God, You are my life.
-
-[Outro]
-Hallelujah...
-        `;
-      }
-
-      setTimeout(() => {
-        document.getElementById("loadingText").style.display = "none";
-        document.getElementById("output").innerText = lyrics;
+        loading.style.display = "none";
       }, 1200);
+    }
+
+    function copyLyrics() {
+      const lyrics = document.getElementById("lyricsOutput").innerText;
+
+      if (!lyrics || lyrics.includes("Your lyrics will appear here")) {
+        alert("⚠ No lyrics to copy yet!");
+        return;
+      }
+
+      navigator.clipboard.writeText(lyrics);
+      alert("✅ Lyrics copied successfully!");
+    }
+
+    function downloadLyrics() {
+      const lyrics = document.getElementById("lyricsOutput").innerText;
+
+      if (!lyrics || lyrics.includes("Your lyrics will appear here")) {
+        alert("⚠ No lyrics to download yet!");
+        return;
+      }
+
+      const blob = new Blob([lyrics], { type: "text/plain" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = "lyrics.txt";
+      link.click();
     }
   </script>
 </body>
-      </html>
+        </html>
