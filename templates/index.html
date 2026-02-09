@@ -16,76 +16,67 @@
 
         h1 {
             color: gold;
-            font-size: 30px;
-            margin-bottom: 5px;
-        }
-
-        p {
-            color: #ccc;
+            font-size: 35px;
         }
 
         input {
             width: 90%;
-            max-width: 500px;
             padding: 15px;
-            margin: 10px auto;
-            border-radius: 12px;
+            margin: 10px 0;
+            border-radius: 10px;
             border: none;
             font-size: 18px;
-            display: block;
         }
 
         button {
             width: 90%;
-            max-width: 500px;
             padding: 15px;
-            border-radius: 12px;
             border: none;
+            border-radius: 10px;
+            background: gold;
             font-size: 20px;
             font-weight: bold;
-            margin-top: 10px;
             cursor: pointer;
+            margin-top: 10px;
         }
 
-        #generateBtn {
-            background: gold;
-            color: black;
-        }
-
-        #lyricsBox {
+        textarea {
             width: 90%;
-            max-width: 500px;
             height: 250px;
-            margin: 20px auto;
+            margin-top: 20px;
+            border-radius: 10px;
             padding: 15px;
-            border-radius: 12px;
-            background: #222;
-            overflow-y: auto;
-            text-align: left;
-            white-space: pre-wrap;
             font-size: 16px;
+            background: #222;
+            color: white;
+            border: none;
         }
 
-        .btnRow {
+        .btns {
+            margin-top: 20px;
             display: flex;
             justify-content: center;
             gap: 10px;
-            margin-top: 15px;
-            flex-wrap: wrap;
         }
 
-        .copyBtn {
+        .btns button {
+            width: 45%;
+        }
+
+        #copyBtn {
             background: limegreen;
             color: black;
-            flex: 1;
-            max-width: 240px;
         }
 
-        .pdfBtn {
+        #pdfBtn {
             background: dodgerblue;
             color: white;
-            flex: 1;
-            max-width: 240px;
+        }
+
+        #status {
+            margin-top: 10px;
+            font-size: 18px;
+            color: orange;
         }
     </style>
 </head>
@@ -94,91 +85,58 @@
     <h1>🎵 AI Lyrics Generator</h1>
     <p>Enter mood, artist and topic then generate lyrics.</p>
 
-    <input type="text" id="mood" placeholder="Mood (e.g Happy, Romantic)">
-    <input type="text" id="artist" placeholder="Artist (e.g Wizkid, Burna Boy)">
-    <input type="text" id="topic" placeholder="Topic (e.g Hustle, Love, Money)">
+    <form id="lyricsForm">
+        <input type="text" name="mood" placeholder="Mood (Happy, Sad, Romantic)" required>
+        <input type="text" name="artist" placeholder="Artist (Wizkid, Burna Boy)" required>
+        <input type="text" name="topic" placeholder="Topic (Love, Hustle, Money)" required>
 
-    <button id="generateBtn" onclick="generateLyrics()">Generate Lyrics</button>
+        <button type="submit">Generate Lyrics</button>
+    </form>
 
-    <div id="lyricsBox">Your lyrics will appear here...</div>
+    <div id="status"></div>
 
-    <div class="btnRow">
-        <button class="copyBtn" onclick="copyLyrics()">📋 Copy</button>
-        <button class="pdfBtn" onclick="downloadPDF()">⬇ Download PDF</button>
+    <textarea id="lyricsBox" placeholder="Your lyrics will appear here..."></textarea>
+
+    <div class="btns">
+        <button id="copyBtn">📋 Copy</button>
+
+        <form action="/download_pdf" method="POST" target="_blank">
+            <input type="hidden" name="lyrics" id="lyricsHidden">
+            <button type="submit" id="pdfBtn">⬇ Download PDF</button>
+        </form>
     </div>
 
-<script>
-async function generateLyrics() {
-    const mood = document.getElementById("mood").value;
-    const artist = document.getElementById("artist").value;
-    const topic = document.getElementById("topic").value;
+    <script>
+        const form = document.getElementById("lyricsForm");
+        const lyricsBox = document.getElementById("lyricsBox");
+        const statusText = document.getElementById("status");
+        const copyBtn = document.getElementById("copyBtn");
+        const lyricsHidden = document.getElementById("lyricsHidden");
 
-    const lyricsBox = document.getElementById("lyricsBox");
-    lyricsBox.innerText = "Generating lyrics...";
+        form.addEventListener("submit", async function(e) {
+            e.preventDefault();
+            statusText.innerText = "Generating lyrics...";
 
-    const formData = new FormData();
-    formData.append("mood", mood);
-    formData.append("artist", artist);
-    formData.append("topic", topic);
+            const formData = new FormData(form);
 
-    try {
-        const response = await fetch("/generate", {
-            method: "POST",
-            body: formData
+            const response = await fetch("/generate", {
+                method: "POST",
+                body: formData
+            });
+
+            const data = await response.json();
+            lyricsBox.value = data.lyrics;
+            lyricsHidden.value = data.lyrics;
+
+            statusText.innerText = "Lyrics Generated ✅";
         });
 
-        const data = await response.json();
-
-        if (data.error) {
-            lyricsBox.innerText = "Error: " + data.error;
-        } else {
-            lyricsBox.innerText = data.lyrics;
-        }
-
-    } catch (err) {
-        lyricsBox.innerText = "Error: " + err;
-    }
-}
-
-function copyLyrics() {
-    const lyrics = document.getElementById("lyricsBox").innerText;
-
-    if (!lyrics || lyrics.includes("Your lyrics will appear")) {
-        alert("Generate lyrics first!");
-        return;
-    }
-
-    navigator.clipboard.writeText(lyrics);
-    alert("Lyrics copied successfully!");
-}
-
-async function downloadPDF() {
-    const lyrics = document.getElementById("lyricsBox").innerText;
-
-    if (!lyrics || lyrics.includes("Your lyrics will appear")) {
-        alert("Generate lyrics first!");
-        return;
-    }
-
-    const formData = new FormData();
-    formData.append("lyrics", lyrics);
-
-    const response = await fetch("/download_pdf", {
-        method: "POST",
-        body: formData
-    });
-
-    const blob = await response.blob();
-    const url = window.URL.createObjectURL(blob);
-
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "lyrics.pdf";
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-}
-</script>
+        copyBtn.addEventListener("click", function() {
+            lyricsBox.select();
+            document.execCommand("copy");
+            alert("Lyrics copied ✅");
+        });
+    </script>
 
 </body>
-            </html>
+</html>
