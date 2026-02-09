@@ -1,185 +1,85 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AI Lyrics Generator</title>
+from flask import Flask, render_template, request, jsonify, send_file
+from openai import OpenAI
+import os
+from fpdf import FPDF
+import tempfile
 
-  <style>
-    body {
-      background: #0b0b0b;
-      color: white;
-      font-family: Arial, sans-serif;
-      margin: 0;
-      padding: 0;
-    }
+app = Flask(__name__)
 
-    .container {
-      max-width: 500px;
-      margin: auto;
-      padding: 20px;
-    }
+# OpenAI client (Reads from Render environment variable)
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-    h1 {
-      text-align: center;
-      color: gold;
-      font-size: 30px;
-    }
 
-    p {
-      text-align: center;
-      color: #ccc;
-      font-size: 14px;
-    }
+@app.route("/")
+def home():
+    return render_template("index.html")
 
-    input {
-      width: 100%;
-      padding: 15px;
-      margin-top: 15px;
-      border-radius: 10px;
-      border: none;
-      font-size: 16px;
-    }
 
-    button {
-      width: 100%;
-      padding: 15px;
-      margin-top: 15px;
-      border-radius: 10px;
-      border: none;
-      font-size: 18px;
-      font-weight: bold;
-      cursor: pointer;
-    }
+@app.route("/generate", methods=["POST"])
+def generate():
+    mood = request.form.get("mood")
+    artist = request.form.get("artist")
+    topic = request.form.get("topic")
 
-    #generateBtn {
-      background: gold;
-      color: black;
-    }
+    if not mood or not artist or not topic:
+        return jsonify({"error": "Please fill all fields"}), 400
 
-    #copyBtn {
-      background: limegreen;
-      color: black;
-    }
+    prompt = f"""
+Write a LONG song lyrics in the style of {artist}.
+Mood: {mood}
+Topic: {topic}
 
-    #downloadBtn {
-      background: dodgerblue;
-      color: white;
-    }
+Structure:
+- Intro (short)
+- Verse 1 (long)
+- Chorus (catchy and repeatable)
+- Verse 2 (long)
+- Chorus (repeat again)
+- Bridge (short emotional part)
+- Final Chorus (strong ending)
 
-    .lyrics-box {
-      background: #111;
-      margin-top: 20px;
-      padding: 15px;
-      border-radius: 10px;
-      white-space: pre-wrap;
-      font-family: monospace;
-      font-size: 14px;
-      height: 300px;
-      overflow-y: auto;
-      border: 1px solid #333;
-    }
+Make it sound modern and musical with rhyme.
+"""
 
-    .btn-row {
-      display: flex;
-      gap: 10px;
-      margin-top: 15px;
-    }
+    try:
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {"role": "system", "content": "You are a professional songwriter."},
+                {"role": "user", "content": prompt}
+            ],
+            max_tokens=900,
+            temperature=0.9
+        )
 
-    .btn-row button {
-      width: 50%;
-    }
+        lyrics = response.choices[0].message.content
 
-    .loading {
-      text-align: center;
-      margin-top: 10px;
-      color: gold;
-      font-weight: bold;
-    }
-  </style>
-</head>
+        return jsonify({"lyrics": lyrics})
 
-<body>
-  <div class="container">
-    <h1>🎵 AI Lyrics Generator</h1>
-    <p>Enter mood, artist and topic then generate lyrics.</p>
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
-    <input type="text" id="mood" placeholder="Enter Mood (e.g Happy, Sad, Romantic)">
-    <input type="text" id="artist" placeholder="Enter Artist (e.g Wizkid, Davido, Burna Boy)">
-    <input type="text" id="topic" placeholder="Enter Topic (e.g Love, Hustle, Money)">
 
-    <button id="generateBtn" onclick="generateLyrics()">Generate Lyrics</button>
+@app.route("/download_pdf", methods=["POST"])
+def download_pdf():
+    lyrics = request.form.get("lyrics")
 
-    <div id="loadingText" class="loading" style="display:none;">Generating lyrics...</div>
+    if not lyrics:
+        return jsonify({"error": "No lyrics to download"}), 400
 
-    <div class="lyrics-box" id="lyricsBox">Your lyrics will appear here...</div>
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_auto_page_break(auto=True, margin=15)
+    pdf.set_font("Arial", size=12)
 
-    <div class="btn-row">
-      <button id="copyBtn" onclick="copyLyrics()">📋 Copy</button>
-      <button id="downloadBtn" onclick="downloadPDF()">⬇ Download PDF</button>
-    </div>
-  </div>
+    for line in lyrics.split("\n"):
+        pdf.multi_cell(0, 8, line)
 
-  <script>
-    async function generateLyrics() {
-      let mood = document.getElementById("mood").value;
-      let artist = document.getElementById("artist").value;
-      let topic = document.getElementById("topic").value;
+    temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=".pdf")
+    pdf.output(temp_file.name)
 
-      document.getElementById("loadingText").style.display = "block";
-      document.getElementById("lyricsBox").innerText = "";
+    return send_file(temp_file.name, as_attachment=True, download_name="lyrics.pdf")
 
-      const response = await fetch("/generate", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          mood: mood,
-          artist: artist,
-          topic: topic
-        })
-      });
 
-      const data = await response.json();
-      document.getElementById("lyricsBox").innerText = data.lyrics;
-
-      document.getElementById("loadingText").style.display = "none";
-    }
-
-    function copyLyrics() {
-      const lyrics = document.getElementById("lyricsBox").innerText;
-      navigator.clipboard.writeText(lyrics);
-      alert("Lyrics copied!");
-    }
-
-    async function downloadPDF() {
-      const lyrics = document.getElementById("lyricsBox").innerText;
-
-      if (lyrics.trim() === "" || lyrics.includes("Your lyrics will appear here")) {
-        alert("Generate lyrics first!");
-        return;
-      }
-
-      const response = await fetch("/download_pdf", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({ lyrics: lyrics })
-      });
-
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "AI_Lyrics.pdf";
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-    }
-  </script>
-
-</body>
-    </html>
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=10000)
