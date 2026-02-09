@@ -8,7 +8,6 @@ app = Flask(__name__)
 
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 
-
 @app.route("/")
 def home():
     return render_template("index.html")
@@ -21,29 +20,22 @@ def generate():
     topic = request.form.get("topic")
 
     if not mood or not artist or not topic:
-        return jsonify({"error": "Please fill all fields"}), 400
+        return jsonify({"lyrics": "Please fill all fields."})
 
     if not GROQ_API_KEY:
-        return jsonify({"error": "GROQ_API_KEY is missing. Add it on Render Environment Variables."}), 500
+        return jsonify({"lyrics": "Error: GROQ_API_KEY not found. Add it in Render environment variables."})
 
     prompt = f"""
-Write a LONG song lyrics in the style of {artist}.
+Write a very long Afrobeats song lyrics in the style of {artist}.
 Mood: {mood}
 Topic: {topic}
 
-Structure:
-- Intro
-- Verse 1 (long)
-- Chorus (catchy and repeatable)
-- Verse 2 (long)
-- Chorus (repeat)
-- Bridge
-- Final Chorus (strong)
-- Outro
-
-Make it sound modern, musical and emotional.
-Add good rhymes.
-Make the chorus very catchy.
+Requirements:
+- Must be very long (at least 4 verses)
+- Must include a strong catchy chorus (repeat chorus twice)
+- Include intro, verse 1, chorus, verse 2, chorus, bridge, verse 3, chorus, outro
+- Use Nigerian slang and smooth rhymes
+- Make it sound like a real hit song
 """
 
     url = "https://api.groq.com/openai/v1/chat/completions"
@@ -54,28 +46,27 @@ Make the chorus very catchy.
     }
 
     data = {
-        "model": "llama3-70b-8192",
+        "model": "llama3-8b-8192",
         "messages": [
-            {"role": "system", "content": "You are a professional songwriter. Write hit song lyrics."},
+            {"role": "system", "content": "You are a professional Afrobeats songwriter."},
             {"role": "user", "content": prompt}
         ],
         "temperature": 0.9,
-        "max_tokens": 900
+        "max_tokens": 1500
     }
 
     try:
         response = requests.post(url, headers=headers, json=data)
         result = response.json()
 
-        if "error" in result:
-            return jsonify({"error": str(result["error"])}), 500
+        if "choices" not in result:
+            return jsonify({"lyrics": f"Error: {result}"})
 
         lyrics = result["choices"][0]["message"]["content"]
-
         return jsonify({"lyrics": lyrics})
 
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"lyrics": f"Error: {str(e)}"})
 
 
 @app.route("/download_pdf", methods=["POST"])
@@ -83,7 +74,7 @@ def download_pdf():
     lyrics = request.form.get("lyrics")
 
     if not lyrics:
-        return jsonify({"error": "No lyrics to download"}), 400
+        return "No lyrics provided", 400
 
     pdf = FPDF()
     pdf.add_page()
@@ -91,7 +82,7 @@ def download_pdf():
     pdf.set_font("Arial", size=12)
 
     for line in lyrics.split("\n"):
-        pdf.multi_cell(0, 8, line)
+        pdf.multi_cell(0, 10, line)
 
     temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=".pdf")
     pdf.output(temp_file.name)
@@ -100,5 +91,4 @@ def download_pdf():
 
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 10000))
-    app.run(host="0.0.0.0", port=port)
+    app.run(host="0.0.0.0", port=10000)
