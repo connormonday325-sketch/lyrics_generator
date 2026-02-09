@@ -1,64 +1,65 @@
-from flask import Flask, render_template, request, send_file
-from fpdf import FPDF
-import os
+from flask import Flask, render_template, request, jsonify
 from openai import OpenAI
+import os
 
 app = Flask(__name__)
 
-# OpenAI Client (New Version)
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+api_key = os.getenv("OPENAI_API_KEY")
 
-def generate_ai_lyrics(style, mood, artist):
+if not api_key:
+    raise ValueError("OPENAI_API_KEY environment variable not found. Add it on Render Environment Variables.")
+
+client = OpenAI(api_key=api_key)
+
+
+@app.route("/")
+def home():
+    return render_template("index.html")
+
+
+@app.route("/generate", methods=["POST"])
+def generate():
+    mood = request.form.get("mood")
+    artist = request.form.get("artist")
+    topic = request.form.get("topic")
+
     prompt = f"""
-Write a long {style} song lyrics with intro, verse 1, pre-chorus, chorus, verse 2, bridge, final chorus and outro.
+Write a long song lyrics with this style:
+
 Mood: {mood}
-Inspired by: {artist}
-Make it catchy and modern.
+Artist style: {artist}
+Topic: {topic}
+
+Make it very long with:
+- Intro
+- Verse 1
+- Chorus
+- Verse 2
+- Chorus
+- Bridge
+- Final Chorus
+- Outro
+
+Make the chorus catchy and repeated.
 """
 
-    response = client.chat.completions.create(
-        model="gpt-4o-mini",
-        messages=[
-            {"role": "system", "content": "You are a professional songwriter."},
-            {"role": "user", "content": prompt}
-        ],
-        max_tokens=800
-    )
+    try:
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {"role": "system", "content": "You are a professional songwriter."},
+                {"role": "user", "content": prompt}
+            ],
+            max_tokens=900
+        )
 
-    return response.choices[0].message.content
+        lyrics = response.choices[0].message.content
+        return jsonify({"lyrics": lyrics})
 
-
-@app.route("/", methods=["GET", "POST"])
-def home():
-    lyrics = ""
-
-    if request.method == "POST":
-        style = request.form.get("style")
-        mood = request.form.get("mood")
-        artist = request.form.get("artist")
-
-        lyrics = generate_ai_lyrics(style, mood, artist)
-
-    return render_template("index.html", lyrics=lyrics)
-
-
-@app.route("/download", methods=["POST"])
-def download_pdf():
-    lyrics = request.form.get("lyrics")
-
-    pdf = FPDF()
-    pdf.add_page()
-    pdf.set_auto_page_break(auto=True, margin=15)
-    pdf.set_font("Arial", size=12)
-
-    for line in lyrics.split("\n"):
-        pdf.multi_cell(0, 10, line)
-
-    file_path = "lyrics.pdf"
-    pdf.output(file_path)
-
-    return send_file(file_path, as_attachment=True)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000)
+    port = int(os.environ.get("PORT", 10000))
+    app.run(host="0.0.0.0", port=port)
