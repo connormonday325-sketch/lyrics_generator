@@ -1,13 +1,12 @@
 from flask import Flask, render_template, request, jsonify, send_file
-from openai import OpenAI
 import os
+import requests
 from fpdf import FPDF
 import tempfile
 
 app = Flask(__name__)
 
-# OpenAI client (Reads from Render environment variable)
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 
 
 @app.route("/")
@@ -24,35 +23,54 @@ def generate():
     if not mood or not artist or not topic:
         return jsonify({"error": "Please fill all fields"}), 400
 
+    if not GROQ_API_KEY:
+        return jsonify({"error": "GROQ_API_KEY is missing. Add it on Render Environment Variables."}), 500
+
     prompt = f"""
 Write a LONG song lyrics in the style of {artist}.
 Mood: {mood}
 Topic: {topic}
 
 Structure:
-- Intro (short)
+- Intro
 - Verse 1 (long)
 - Chorus (catchy and repeatable)
 - Verse 2 (long)
-- Chorus (repeat again)
-- Bridge (short emotional part)
-- Final Chorus (strong ending)
+- Chorus (repeat)
+- Bridge
+- Final Chorus (strong)
+- Outro
 
-Make it sound modern and musical with rhyme.
+Make it sound modern, musical and emotional.
+Add good rhymes.
+Make the chorus very catchy.
 """
 
-    try:
-        response = client.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=[
-                {"role": "system", "content": "You are a professional songwriter."},
-                {"role": "user", "content": prompt}
-            ],
-            max_tokens=900,
-            temperature=0.9
-        )
+    url = "https://api.groq.com/openai/v1/chat/completions"
 
-        lyrics = response.choices[0].message.content
+    headers = {
+        "Authorization": f"Bearer {GROQ_API_KEY}",
+        "Content-Type": "application/json"
+    }
+
+    data = {
+        "model": "llama3-70b-8192",
+        "messages": [
+            {"role": "system", "content": "You are a professional songwriter. Write hit song lyrics."},
+            {"role": "user", "content": prompt}
+        ],
+        "temperature": 0.9,
+        "max_tokens": 900
+    }
+
+    try:
+        response = requests.post(url, headers=headers, json=data)
+        result = response.json()
+
+        if "error" in result:
+            return jsonify({"error": str(result["error"])}), 500
+
+        lyrics = result["choices"][0]["message"]["content"]
 
         return jsonify({"lyrics": lyrics})
 
@@ -82,4 +100,5 @@ def download_pdf():
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=10000)
+    port = int(os.environ.get("PORT", 10000))
+    app.run(host="0.0.0.0", port=port)
