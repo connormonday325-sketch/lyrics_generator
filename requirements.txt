@@ -1,5 +1,5 @@
-
 flask
 requests
 fpdf
+psycopg2-binary
 gunicorn
