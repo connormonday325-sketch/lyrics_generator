@@ -1,106 +1,134 @@
-import json
 import os
 import requests
+import tempfile
+import psycopg2
 from datetime import datetime
 from flask import Flask, render_template, request, jsonify, send_file
+
 from fpdf import FPDF
-import tempfile
 
 app = Flask(__name__)
 
-STATS_FILE = "stats.json"
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
+DATABASE_URL = os.getenv("DATABASE_URL")
 
 
-def load_stats():
-    if not os.path.exists(STATS_FILE):
-        return {
-            "visits": 0,
-            "lyrics_generated": 0,
-            "unique_visitors": 0,
-            "daily_stats": {},
-            "visitor_ips": [],
-            "visitor_countries": {},
-            "last_visit": None
-        }
+# -------------------------
+# DATABASE FUNCTIONS
+# -------------------------
+def get_db_connection():
+    if not DATABASE_URL:
+        raise Exception("DATABASE_URL not found. Add it in Render Environment Variables.")
 
-    try:
-        with open(STATS_FILE, "r") as f:
-            return json.load(f)
-    except:
-        return {
-            "visits": 0,
-            "lyrics_generated": 0,
-            "unique_visitors": 0,
-            "daily_stats": {},
-            "visitor_ips": [],
-            "visitor_countries": {},
-            "last_visit": None
-        }
+    return psycopg2.connect(DATABASE_URL)
 
 
-def save_stats(stats):
-    with open(STATS_FILE, "w") as f:
-        json.dump(stats, f, indent=4)
+def init_db():
+    conn = get_db_connection()
+    cur = conn.cursor()
+
+    # table to store counters
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS stats (
+            id SERIAL PRIMARY KEY,
+            visits INTEGER DEFAULT 0,
+            lyrics_generated INTEGER DEFAULT 0,
+            pdf_downloads INTEGER DEFAULT 0
+        );
+    """)
+
+    # table to store history logs
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS history (
+            id SERIAL PRIMARY KEY,
+            action TEXT NOT NULL,
+            timestamp TIMESTAMP NOT NULL
+        );
+    """)
+
+    # ensure stats table has one row
+    cur.execute("SELECT COUNT(*) FROM stats;")
+    count = cur.fetchone()[0]
+
+    if count == 0:
+        cur.execute("INSERT INTO stats (visits, lyrics_generated, pdf_downloads) VALUES (0, 0, 0);")
+
+    conn.commit()
+    cur.close()
+    conn.close()
 
 
-def get_client_ip():
-    # Render sometimes uses proxy headers
-    if request.headers.get("X-Forwarded-For"):
-        return request.headers.get("X-Forwarded-For").split(",")[0].strip()
-    return request.remote_addr
+def log_action(action):
+    conn = get_db_connection()
+    cur = conn.cursor()
+
+    cur.execute(
+        "INSERT INTO history (action, timestamp) VALUES (%s, %s);",
+        (action, datetime.now())
+    )
+
+    conn.commit()
+    cur.close()
+    conn.close()
 
 
-def get_country_from_ip(ip):
-    try:
-        url = f"http://ip-api.com/json/{ip}"
-        response = requests.get(url, timeout=5)
-        data = response.json()
+def increment_stat(stat_name):
+    conn = get_db_connection()
+    cur = conn.cursor()
 
-        if data.get("status") == "success":
-            return data.get("country", "Unknown")
-        return "Unknown"
-    except:
-        return "Unknown"
+    if stat_name == "visits":
+        cur.execute("UPDATE stats SET visits = visits + 1 WHERE id = 1;")
+        log_action("visit")
 
+    elif stat_name == "lyrics_generated":
+        cur.execute("UPDATE stats SET lyrics_generated = lyrics_generated + 1 WHERE id = 1;")
+        log_action("lyrics_generated")
 
-def update_daily_stats(stats, action_type):
-    today = datetime.now().strftime("%Y-%m-%d")
+    elif stat_name == "pdf_downloads":
+        cur.execute("UPDATE stats SET pdf_downloads = pdf_downloads + 1 WHERE id = 1;")
+        log_action("pdf_download")
 
-    if today not in stats["daily_stats"]:
-        stats["daily_stats"][today] = {
-            "visits": 0,
-            "lyrics_generated": 0
-        }
-
-    stats["daily_stats"][today][action_type] += 1
+    conn.commit()
+    cur.close()
+    conn.close()
 
 
+def get_stats():
+    conn = get_db_connection()
+    cur = conn.cursor()
+
+    cur.execute("SELECT visits, lyrics_generated, pdf_downloads FROM stats WHERE id = 1;")
+    row = cur.fetchone()
+
+    cur.close()
+    conn.close()
+
+    return {
+        "visits": row[0],
+        "lyrics_generated": row[1],
+        "pdf_downloads": row[2]
+    }
+
+
+def get_history(limit=50):
+    conn = get_db_connection()
+    cur = conn.cursor()
+
+    cur.execute("SELECT action, timestamp FROM history ORDER BY timestamp DESC LIMIT %s;", (limit,))
+    rows = cur.fetchall()
+
+    cur.close()
+    conn.close()
+
+    return [{"action": r[0], "timestamp": str(r[1])} for r in rows]
+
+
+# -------------------------
+# ROUTES
+# -------------------------
 @app.route("/")
 def home():
-    stats = load_stats()
-
-    # Count visit
-    stats["visits"] += 1
-    update_daily_stats(stats, "visits")
-
-    # Track IP + unique visitors
-    ip = get_client_ip()
-    if ip not in stats["visitor_ips"]:
-        stats["visitor_ips"].append(ip)
-        stats["unique_visitors"] += 1
-
-        # Track country
-        country = get_country_from_ip(ip)
-        if country not in stats["visitor_countries"]:
-            stats["visitor_countries"][country] = 0
-        stats["visitor_countries"][country] += 1
-
-    # Save last visit time
-    stats["last_visit"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
-    save_stats(stats)
-
+    increment_stat("visits")
     return render_template("index.html")
 
 
@@ -155,11 +183,8 @@ Requirements:
 
         lyrics = result["choices"][0]["message"]["content"]
 
-        # Count generated lyrics
-        stats = load_stats()
-        stats["lyrics_generated"] += 1
-        update_daily_stats(stats, "lyrics_generated")
-        save_stats(stats)
+        # increment counter
+        increment_stat("lyrics_generated")
 
         return jsonify({"lyrics": lyrics})
 
@@ -185,13 +210,29 @@ def download_pdf():
     temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=".pdf")
     pdf.output(temp_file.name)
 
+    # increment counter
+    increment_stat("pdf_downloads")
+
     return send_file(temp_file.name, as_attachment=True, download_name="lyrics.pdf")
 
 
-@app.route("/stats")
+# -------------------------
+# STATS ENDPOINTS
+# -------------------------
+@app.route("/stats", methods=["GET"])
 def stats():
-    return jsonify(load_stats())
+    return jsonify(get_stats())
 
 
+@app.route("/history", methods=["GET"])
+def history():
+    limit = request.args.get("limit", 50)
+    return jsonify(get_history(int(limit)))
+
+
+# -------------------------
+# RUN
+# -------------------------
 if __name__ == "__main__":
+    init_db()
     app.run(host="0.0.0.0", port=10000)
