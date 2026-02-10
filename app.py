@@ -1,3 +1,20 @@
+import json
+import os
+from flask import Flask, render_template, request, jsonify
+
+app = Flask(__name__)
+
+STATS_FILE = "stats.json"
+
+def load_stats():
+    if not os.path.exists(STATS_FILE):
+        return {"visits": 0, "lyrics_generated": 0}
+    with open(STATS_FILE, "r") as f:
+        return json.load(f)
+
+def save_stats(stats):
+    with open(STATS_FILE, "w") as f:
+        json.dump(stats, f)
 from flask import Flask, render_template, request, jsonify, send_file
 import os
 import requests
