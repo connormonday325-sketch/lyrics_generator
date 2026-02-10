@@ -1,7 +1,7 @@
-
 import json
 import os
 import requests
+from datetime import datetime
 from flask import Flask, render_template, request, jsonify, send_file
 from fpdf import FPDF
 import tempfile
@@ -14,25 +14,91 @@ GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 
 def load_stats():
     if not os.path.exists(STATS_FILE):
-        return {"visits": 0, "lyrics_generated": 0}
+        return {
+            "visits": 0,
+            "lyrics_generated": 0,
+            "unique_visitors": 0,
+            "daily_stats": {},
+            "visitor_ips": [],
+            "visitor_countries": {},
+            "last_visit": None
+        }
 
     try:
         with open(STATS_FILE, "r") as f:
             return json.load(f)
     except:
-        return {"visits": 0, "lyrics_generated": 0}
+        return {
+            "visits": 0,
+            "lyrics_generated": 0,
+            "unique_visitors": 0,
+            "daily_stats": {},
+            "visitor_ips": [],
+            "visitor_countries": {},
+            "last_visit": None
+        }
 
 
 def save_stats(stats):
     with open(STATS_FILE, "w") as f:
-        json.dump(stats, f)
+        json.dump(stats, f, indent=4)
+
+
+def get_client_ip():
+    # Render sometimes uses proxy headers
+    if request.headers.get("X-Forwarded-For"):
+        return request.headers.get("X-Forwarded-For").split(",")[0].strip()
+    return request.remote_addr
+
+
+def get_country_from_ip(ip):
+    try:
+        url = f"http://ip-api.com/json/{ip}"
+        response = requests.get(url, timeout=5)
+        data = response.json()
+
+        if data.get("status") == "success":
+            return data.get("country", "Unknown")
+        return "Unknown"
+    except:
+        return "Unknown"
+
+
+def update_daily_stats(stats, action_type):
+    today = datetime.now().strftime("%Y-%m-%d")
+
+    if today not in stats["daily_stats"]:
+        stats["daily_stats"][today] = {
+            "visits": 0,
+            "lyrics_generated": 0
+        }
+
+    stats["daily_stats"][today][action_type] += 1
 
 
 @app.route("/")
 def home():
-    # Count visits
     stats = load_stats()
+
+    # Count visit
     stats["visits"] += 1
+    update_daily_stats(stats, "visits")
+
+    # Track IP + unique visitors
+    ip = get_client_ip()
+    if ip not in stats["visitor_ips"]:
+        stats["visitor_ips"].append(ip)
+        stats["unique_visitors"] += 1
+
+        # Track country
+        country = get_country_from_ip(ip)
+        if country not in stats["visitor_countries"]:
+            stats["visitor_countries"][country] = 0
+        stats["visitor_countries"][country] += 1
+
+    # Save last visit time
+    stats["last_visit"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
     save_stats(stats)
 
     return render_template("index.html")
@@ -92,6 +158,7 @@ Requirements:
         # Count generated lyrics
         stats = load_stats()
         stats["lyrics_generated"] += 1
+        update_daily_stats(stats, "lyrics_generated")
         save_stats(stats)
 
         return jsonify({"lyrics": lyrics})
@@ -123,7 +190,6 @@ def download_pdf():
 
 @app.route("/stats")
 def stats():
-    # View stats in browser
     return jsonify(load_stats())
 
 
