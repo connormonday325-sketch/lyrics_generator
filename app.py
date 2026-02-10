@@ -1,32 +1,40 @@
+
 import json
 import os
-from flask import Flask, render_template, request, jsonify
-
-app = Flask(__name__)
-
-STATS_FILE = "stats.json"
-
-def load_stats():
-    if not os.path.exists(STATS_FILE):
-        return {"visits": 0, "lyrics_generated": 0}
-    with open(STATS_FILE, "r") as f:
-        return json.load(f)
-
-def save_stats(stats):
-    with open(STATS_FILE, "w") as f:
-        json.dump(stats, f)
-from flask import Flask, render_template, request, jsonify, send_file
-import os
 import requests
+from flask import Flask, render_template, request, jsonify, send_file
 from fpdf import FPDF
 import tempfile
 
 app = Flask(__name__)
 
+STATS_FILE = "stats.json"
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
+
+
+def load_stats():
+    if not os.path.exists(STATS_FILE):
+        return {"visits": 0, "lyrics_generated": 0}
+
+    try:
+        with open(STATS_FILE, "r") as f:
+            return json.load(f)
+    except:
+        return {"visits": 0, "lyrics_generated": 0}
+
+
+def save_stats(stats):
+    with open(STATS_FILE, "w") as f:
+        json.dump(stats, f)
+
 
 @app.route("/")
 def home():
+    # Count visits
+    stats = load_stats()
+    stats["visits"] += 1
+    save_stats(stats)
+
     return render_template("index.html")
 
 
@@ -80,6 +88,12 @@ Requirements:
             return jsonify({"lyrics": f"Error: {result}"})
 
         lyrics = result["choices"][0]["message"]["content"]
+
+        # Count generated lyrics
+        stats = load_stats()
+        stats["lyrics_generated"] += 1
+        save_stats(stats)
+
         return jsonify({"lyrics": lyrics})
 
     except Exception as e:
@@ -105,6 +119,12 @@ def download_pdf():
     pdf.output(temp_file.name)
 
     return send_file(temp_file.name, as_attachment=True, download_name="lyrics.pdf")
+
+
+@app.route("/stats")
+def stats():
+    # View stats in browser
+    return jsonify(load_stats())
 
 
 if __name__ == "__main__":
