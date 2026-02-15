@@ -1,92 +1,70 @@
 import os
 import requests
 import tempfile
-import psycopg2
-from datetime import datetime
 from flask import Flask, render_template, request, jsonify, send_file
-
 from fpdf import FPDF
+import psycopg2
 
 app = Flask(__name__)
 
+# GROQ API KEY
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
+
+# DATABASE URL (Render Postgres provides this)
 DATABASE_URL = os.getenv("DATABASE_URL")
 
 
-# -------------------------
+# -------------------------------
 # DATABASE FUNCTIONS
-# -------------------------
+# -------------------------------
 def get_db_connection():
     if not DATABASE_URL:
-        raise Exception("DATABASE_URL not found. Add it in Render Environment Variables.")
-
+        return None
     return psycopg2.connect(DATABASE_URL)
 
 
 def init_db():
     conn = get_db_connection()
+    if not conn:
+        print("DATABASE_URL not found!")
+        return
+
     cur = conn.cursor()
 
-    # table to store counters
+    # Create table if not exists
     cur.execute("""
         CREATE TABLE IF NOT EXISTS stats (
             id SERIAL PRIMARY KEY,
             visits INTEGER DEFAULT 0,
-            lyrics_generated INTEGER DEFAULT 0,
-            pdf_downloads INTEGER DEFAULT 0
+            lyrics_generated INTEGER DEFAULT 0
         );
     """)
 
-    # table to store history logs
-    cur.execute("""
-        CREATE TABLE IF NOT EXISTS history (
-            id SERIAL PRIMARY KEY,
-            action TEXT NOT NULL,
-            timestamp TIMESTAMP NOT NULL
-        );
-    """)
-
-    # ensure stats table has one row
+    # Ensure there is always 1 row
     cur.execute("SELECT COUNT(*) FROM stats;")
     count = cur.fetchone()[0]
 
     if count == 0:
-        cur.execute("INSERT INTO stats (visits, lyrics_generated, pdf_downloads) VALUES (0, 0, 0);")
+        cur.execute("INSERT INTO stats (visits, lyrics_generated) VALUES (0, 0);")
 
     conn.commit()
     cur.close()
     conn.close()
 
-
-def log_action(action):
-    conn = get_db_connection()
-    cur = conn.cursor()
-
-    cur.execute(
-        "INSERT INTO history (action, timestamp) VALUES (%s, %s);",
-        (action, datetime.now())
-    )
-
-    conn.commit()
-    cur.close()
-    conn.close()
+    print("Database initialized successfully!")
 
 
 def increment_stat(stat_name):
     conn = get_db_connection()
+    if not conn:
+        return
+
     cur = conn.cursor()
 
     if stat_name == "visits":
         cur.execute("UPDATE stats SET visits = visits + 1 WHERE id = 1;")
-        log_action("visit")
-
     elif stat_name == "lyrics_generated":
         cur.execute("UPDATE stats SET lyrics_generated = lyrics_generated + 1 WHERE id = 1;")
-        log_action("lyrics_generated")
-
-    elif stat_name == "pdf_downloads":
-        cur.execute("UPDATE stats SET pdf_downloads = pdf_downloads + 1 WHERE id = 1;")
-        log_action("pdf_download")
 
     conn.commit()
     cur.close()
@@ -95,45 +73,42 @@ def increment_stat(stat_name):
 
 def get_stats():
     conn = get_db_connection()
-    cur = conn.cursor()
+    if not conn:
+        return {"visits": 0, "lyrics_generated": 0}
 
-    cur.execute("SELECT visits, lyrics_generated, pdf_downloads FROM stats WHERE id = 1;")
+    cur = conn.cursor()
+    cur.execute("SELECT visits, lyrics_generated FROM stats WHERE id = 1;")
     row = cur.fetchone()
 
     cur.close()
     conn.close()
 
-    return {
-        "visits": row[0],
-        "lyrics_generated": row[1],
-        "pdf_downloads": row[2]
-    }
+    if row:
+        return {"visits": row[0], "lyrics_generated": row[1]}
+    else:
+        return {"visits": 0, "lyrics_generated": 0}
 
 
-def get_history(limit=50):
-    conn = get_db_connection()
-    cur = conn.cursor()
-
-    cur.execute("SELECT action, timestamp FROM history ORDER BY timestamp DESC LIMIT %s;", (limit,))
-    rows = cur.fetchall()
-
-    cur.close()
-    conn.close()
-
-    return [{"action": r[0], "timestamp": str(r[1])} for r in rows]
-
-
-# -------------------------
+# -------------------------------
 # ROUTES
-# -------------------------
+# -------------------------------
 @app.route("/")
 def home():
+    init_db()
     increment_stat("visits")
     return render_template("index.html")
 
 
+@app.route("/stats")
+def stats():
+    init_db()
+    return jsonify(get_stats())
+
+
 @app.route("/generate", methods=["POST"])
 def generate():
+    init_db()
+
     mood = request.form.get("mood")
     artist = request.form.get("artist")
     topic = request.form.get("topic")
@@ -183,7 +158,7 @@ Requirements:
 
         lyrics = result["choices"][0]["message"]["content"]
 
-        # increment counter
+        # Increment lyrics counter
         increment_stat("lyrics_generated")
 
         return jsonify({"lyrics": lyrics})
@@ -210,29 +185,8 @@ def download_pdf():
     temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=".pdf")
     pdf.output(temp_file.name)
 
-    # increment counter
-    increment_stat("pdf_downloads")
-
     return send_file(temp_file.name, as_attachment=True, download_name="lyrics.pdf")
 
 
-# -------------------------
-# STATS ENDPOINTS
-# -------------------------
-@app.route("/stats", methods=["GET"])
-def stats():
-    return jsonify(get_stats())
-
-
-@app.route("/history", methods=["GET"])
-def history():
-    limit = request.args.get("limit", 50)
-    return jsonify(get_history(int(limit)))
-
-
-# -------------------------
-# RUN
-# -------------------------
 if __name__ == "__main__":
-    init_db()
     app.run(host="0.0.0.0", port=10000)
