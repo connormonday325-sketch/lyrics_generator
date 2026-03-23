@@ -3,3 +3,4 @@ requests
 fpdf
 psycopg2-binary
 gunicorn
+gTTS
