@@ -1,198 +1,60 @@
+    from flask import Flask, request, jsonify, send_file
 from gtts import gTTS
 import os
 
-def text_to_speech(text, filename="output.mp3"):
-    tts = gTTS(text=text, lang='en')
-    tts.save(filename)
-    return filenameimport os
-import requests
-import tempfile
-from flask import Flask, render_template, request, jsonify, send_file
-from fpdf import FPDF
-import psycopg2
-
 app = Flask(__name__)
 
-# GROQ API KEY
-GROQ_API_KEY = os.getenv("GROQ_API_KEY")
+# -------- Generate Lyrics --------
+def generate_lyrics(topic, style):
+    return f"""
+Style: {style}
 
-# DATABASE URL (Render Postgres provides this)
-DATABASE_URL = os.getenv("DATABASE_URL")
+Verse 1:
+I’m feeling this vibe about {topic}
+Everyday I rise, I can’t stop it
+Dreams on my mind, I’m chasing the light
+Everything I want, I go get it tonight
 
-
-# -------------------------------
-# DATABASE FUNCTIONS
-# -------------------------------
-def get_db_connection():
-    if not DATABASE_URL:
-        return None
-    return psycopg2.connect(DATABASE_URL)
-
-
-def init_db():
-    conn = get_db_connection()
-    if not conn:
-        print("DATABASE_URL not found!")
-        return
-
-    cur = conn.cursor()
-
-    # Create table if not exists
-    cur.execute("""
-        CREATE TABLE IF NOT EXISTS stats (
-            id SERIAL PRIMARY KEY,
-            visits INTEGER DEFAULT 0,
-            lyrics_generated INTEGER DEFAULT 0
-        );
-    """)
-
-    # Ensure there is always 1 row
-    cur.execute("SELECT COUNT(*) FROM stats;")
-    count = cur.fetchone()[0]
-
-    if count == 0:
-        cur.execute("INSERT INTO stats (visits, lyrics_generated) VALUES (0, 0);")
-
-    conn.commit()
-    cur.close()
-    conn.close()
-
-    print("Database initialized successfully!")
-
-
-def increment_stat(stat_name):
-    conn = get_db_connection()
-    if not conn:
-        return
-
-    cur = conn.cursor()
-
-    if stat_name == "visits":
-        cur.execute("UPDATE stats SET visits = visits + 1 WHERE id = 1;")
-    elif stat_name == "lyrics_generated":
-        cur.execute("UPDATE stats SET lyrics_generated = lyrics_generated + 1 WHERE id = 1;")
-
-    conn.commit()
-    cur.close()
-    conn.close()
-
-
-def get_stats():
-    conn = get_db_connection()
-    if not conn:
-        return {"visits": 0, "lyrics_generated": 0}
-
-    cur = conn.cursor()
-    cur.execute("SELECT visits, lyrics_generated FROM stats WHERE id = 1;")
-    row = cur.fetchone()
-
-    cur.close()
-    conn.close()
-
-    if row:
-        return {"visits": row[0], "lyrics_generated": row[1]}
-    else:
-        return {"visits": 0, "lyrics_generated": 0}
-
-
-# -------------------------------
-# ROUTES
-# -------------------------------
-@app.route("/")
-def home():
-    init_db()
-    increment_stat("visits")
-    return render_template("index.html")
-
-
-@app.route("/stats")
-def stats():
-    init_db()
-    return jsonify(get_stats())
-
-
-@app.route("/generate", methods=["POST"])
-def generate():
-    init_db()
-
-    mood = request.form.get("mood")
-    artist = request.form.get("artist")
-    topic = request.form.get("topic")
-
-    if not mood or not artist or not topic:
-        return jsonify({"lyrics": "Please fill all fields."})
-
-    if not GROQ_API_KEY:
-        return jsonify({"lyrics": "Error: GROQ_API_KEY not found. Add it in Render environment variables."})
-
-    prompt = f"""
-Write a very long Afrobeats song lyrics in the style of {artist}.
-Mood: {mood}
-Topic: {topic}
-
-Requirements:
-- Must be very long (at least 4 verses)
-- Must include a strong catchy chorus (repeat chorus twice)
-- Include intro, verse 1, chorus, verse 2, chorus, bridge, verse 3, chorus, outro
-- Use Nigerian slang and smooth rhymes
-- Make it sound like a real hit song
+Hook:
+{topic} on my mind, yeah I sing it loud
+Standing so tall, make my people proud
+No fear, no doubt, I’m breaking through
+This is my moment, yeah I’m coming through
 """
 
-    url = "https://api.groq.com/openai/v1/chat/completions"
+# -------- Home Route --------
+@app.route("/")
+def home():
+    return "Lyrics Generator App is Running!"
 
-    headers = {
-        "Authorization": f"Bearer {GROQ_API_KEY}",
-        "Content-Type": "application/json"
-    }
+# -------- Generate Lyrics API --------
+@app.route("/generate", methods=["POST"])
+def generate():
+    data = request.json
+    topic = data.get("topic", "life")
+    style = data.get("style", "afrobeats")
 
-    data = {
-        "model": "llama-3.1-8b-instant",
-        "messages": [
-            {"role": "system", "content": "You are a professional Afrobeats songwriter."},
-            {"role": "user", "content": prompt}
-        ],
-        "temperature": 0.9,
-        "max_tokens": 1500
-    }
+    lyrics = generate_lyrics(topic, style)
 
-    try:
-        response = requests.post(url, headers=headers, json=data)
-        result = response.json()
+    return jsonify({"lyrics": lyrics})
 
-        if "choices" not in result:
-            return jsonify({"lyrics": f"Error: {result}"})
+# -------- Text to Speech --------
+@app.route("/tts", methods=["POST"])
+def tts():
+    data = request.json
+    text = data.get("text")
 
-        lyrics = result["choices"][0]["message"]["content"]
+    if not text:
+        return jsonify({"error": "No text provided"}), 400
 
-        # Increment lyrics counter
-        increment_stat("lyrics_generated")
+    filename = "speech.mp3"
 
-        return jsonify({"lyrics": lyrics})
+    # limit text to avoid crash
+    tts = gTTS(text=text[:500], lang='en')
+    tts.save(filename)
 
-    except Exception as e:
-        return jsonify({"lyrics": f"Error: {str(e)}"})
+    return send_file(filename, as_attachment=False)
 
-
-@app.route("/download_pdf", methods=["POST"])
-def download_pdf():
-    lyrics = request.form.get("lyrics")
-
-    if not lyrics:
-        return "No lyrics provided", 400
-
-    pdf = FPDF()
-    pdf.add_page()
-    pdf.set_auto_page_break(auto=True, margin=15)
-    pdf.set_font("Arial", size=12)
-
-    for line in lyrics.split("\n"):
-        pdf.multi_cell(0, 10, line)
-
-    temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=".pdf")
-    pdf.output(temp_file.name)
-
-    return send_file(temp_file.name, as_attachment=True, download_name="lyrics.pdf")
-
-
+# -------- Run App --------
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=10000)
