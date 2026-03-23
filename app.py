@@ -1,22 +1,18 @@
 from flask import Flask, request, jsonify, send_file
 from gtts import gTTS
+import uuid
 
 app = Flask(__name__)
 
 # -------- Generate Lyrics --------
+import random
 def generate_lyrics(topic, style):
-    return f"""
-Style: {style}
-
-Verse 1:
-I'm feeling this vibe about {topic}
-Everyday I rise, I can't stop it
-Dreams on my mind, I'm chasing the light
-
-Hook:
-{topic} on my mind, yeah I sing it loud
-Standing so tall, make my people proud
-"""
+    verses = [
+        f"I'm feeling this vibe about {topic}\nEveryday I rise, I can't stop it\nDreams on my mind, I'm chasing the light",
+        f"{topic} in my heart, I gotta say\nRhythm in my soul, I pave the way\nStyle {style} making me sway"
+    ]
+    hook = f"{topic} on my mind, yeah I sing it loud\nStanding so tall, make my people proud"
+    return "\n\n".join(random.sample(verses, 1) + [hook])
 
 # -------- Home Route --------
 @app.route("/")
@@ -29,7 +25,6 @@ def generate():
     data = request.get_json()
     topic = data.get("topic", "life")
     style = data.get("style", "afrobeats")
-
     lyrics = generate_lyrics(topic, style)
     return jsonify({"lyrics": lyrics})
 
@@ -38,14 +33,14 @@ def generate():
 def tts():
     data = request.get_json()
     text = data.get("text")
-
     if not text:
-        return jsonify({"error": "No text"}), 400
+        return jsonify({"error": "No text provided"}), 400
 
-    tts = gTTS(text=text[:300], lang="en")
-    tts.save("speech.mp3")
+    filename = f"speech_{uuid.uuid4().hex}.mp3"
+    tts = gTTS(text=text, lang="en")
+    tts.save(filename)
 
-    return send_file("speech.mp3")
+    return send_file(filename, as_attachment=True)
 
 # -------- Run --------
 if __name__ == "__main__":
