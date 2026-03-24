@@ -1,141 +1,41 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Lyrics Generator</title>
-
-    <style>
-        body {
-            background: #111;
-            color: white;
-            font-family: Arial, sans-serif;
-            text-align: center;
-            padding: 20px;
-        }
-
-        h1 {
-            color: gold;
-            font-size: 35px;
-        }
-
-        input {
-            width: 90%;
-            padding: 15px;
-            margin: 10px 0;
-            border-radius: 10px;
-            border: none;
-            font-size: 18px;
-        }
-
-        button {
-            width: 90%;
-            padding: 15px;
-            border: none;
-            border-radius: 10px;
-            background: gold;
-            font-size: 20px;
-            font-weight: bold;
-            cursor: pointer;
-            margin-top: 10px;
-        }
-
-        textarea {
-            width: 90%;
-            height: 250px;
-            margin-top: 20px;
-            border-radius: 10px;
-            padding: 15px;
-            font-size: 16px;
-            background: #222;
-            color: white;
-            border: none;
-        }
-
-        .btns {
-            margin-top: 20px;
-            display: flex;
-            justify-content: center;
-            gap: 10px;
-        }
-
-        .btns button {
-            width: 45%;
-        }
-
-        #copyBtn {
-            background: limegreen;
-            color: black;
-        }
-
-        #pdfBtn {
-            background: dodgerblue;
-            color: white;
-        }
-
-        #status {
-            margin-top: 10px;
-            font-size: 18px;
-            color: orange;
-        }
-    </style>
+    <title>🎵 AI Music Generator</title>
 </head>
-<body>
+<body style="text-align:center; font-family:sans-serif;">
 
-    <h1>🎵 AI Lyrics Generator</h1>
-    <p>Enter mood, artist and topic then generate lyrics.</p>
+    <h1>🎵 AI Music Generator</h1>
 
-    <form id="lyricsForm">
-        <input type="text" name="mood" placeholder="Mood (Happy, Sad, Romantic)" required>
-        <input type="text" name="artist" placeholder="Artist (Wizkid, Burna Boy)" required>
-        <input type="text" name="topic" placeholder="Topic (Love, Hustle, Money)" required>
+    <input id="topic" placeholder="Enter topic"><br><br>
+    <input id="style" placeholder="Enter style"><br><br>
 
-        <button type="submit">Generate Lyrics</button>
-    </form>
+    <button onclick="generate()">Generate Song</button>
 
-    <div id="status"></div>
+    <h3>Lyrics:</h3>
+    <pre id="lyrics"></pre>
 
-    <textarea id="lyricsBox" placeholder="Your lyrics will appear here..."></textarea>
-
-    <div class="btns">
-        <button id="copyBtn">📋 Copy</button>
-
-        <form action="/download_pdf" method="POST" target="_blank">
-            <input type="hidden" name="lyrics" id="lyricsHidden">
-            <button type="submit" id="pdfBtn">⬇ Download PDF</button>
-        </form>
-    </div>
+    <audio id="player" controls></audio>
 
     <script>
-        const form = document.getElementById("lyricsForm");
-        const lyricsBox = document.getElementById("lyricsBox");
-        const statusText = document.getElementById("status");
-        const copyBtn = document.getElementById("copyBtn");
-        const lyricsHidden = document.getElementById("lyricsHidden");
+        async function generate() {
+            let topic = document.getElementById("topic").value;
+            let style = document.getElementById("style").value;
 
-        form.addEventListener("submit", async function(e) {
-            e.preventDefault();
-            statusText.innerText = "Generating lyrics...";
-
-            const formData = new FormData(form);
-
-            const response = await fetch("/generate", {
+            let res = await fetch("/generate_song", {
                 method: "POST",
-                body: formData
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify({topic, style})
             });
 
-            const data = await response.json();
-            lyricsBox.value = data.lyrics;
-            lyricsHidden.value = data.lyrics;
+            let data = await res.json();
 
-            statusText.innerText = "Lyrics Generated ✅";
-        });
+            document.getElementById("lyrics").innerText = data.lyrics;
 
-        copyBtn.addEventListener("click", function() {
-            lyricsBox.select();
-            document.execCommand("copy");
-            alert("Lyrics copied ✅");
-        });
+            let player = document.getElementById("player");
+            player.src = data.audio;
+            player.play();
+        }
     </script>
 
 </body>
